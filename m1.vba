@@ -30,9 +30,10 @@ Sub chose1()
 
     Dim strfile As String
     Dim brr
-    Dim fileFolderName, hbqdFilename As String
+    Dim fileFolderName
+    Dim hbqdFilename As String
+    Dim qdcyFilename As String
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
-    
     If dg.Show = -1 Then
         '递归所选目录，找到所有excel文件
         Dim excelFilenames As Variant
@@ -54,12 +55,12 @@ Sub chose1()
         End If
         '提前建立合并清单文件
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
-
         If fileIsExist(hbqdFilename) Then
             MsgBox (hbqdFilename & " already exist")
         Else
             createExcel (hbqdFilename)
         End If
+
         Dim hbqdWb As Workbook
         Set hbqdWb = Workbooks.Open(hbqdFilename)
         Call HbqdStep1(hbqdWb)
@@ -73,8 +74,10 @@ Sub chose1()
             '[f5] = excelFilename.Name
             Call SjqdCopy(CStr(excelFilename), hbqdWb)
         Next
+        Exit Sub
         Call HbqdStep2(hbqdWb)
-        Call HbqdStep3(hbqdWb)
+        qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
+        Call HbqdStep3(hbqdWb, qdcyFilename)
 
         hbqdWb.Close (True)
         Exit Sub
@@ -172,29 +175,29 @@ Sub HbqdStep2(wb As Workbook)
     End With
 End Sub
 
-Sub HbqdStep3(wb As Workbook)
+Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
     Call StdOrNoStd(wb)
-    'Call 清单差异比对
-    ' Application.DisplayAlerts = False
-    ' If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
-    '         Sheets("清单汇总处理").Delete
-    '         ThisWorkbook.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
-    '         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
-    '     ActiveWorkbook.SaveAs filename:=strfile & wjj_name & "\" & wjj_name & "-清单差异", FileFormat:=51
-    '     ActiveWorkbook.Close SaveChanges:=True
-    '         ThisWorkbook.Sheets("清单差异比对").Activate
-    '         MsgBox "与设计核对打包数量与设计清单差异"
-    '         Exit Sub
-    '     Else
-    '     Sheets("清单汇总处理").Delete
-    '     Sheets("清单差异比对").Delete
-    '     End If
-    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标带配件"
-    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标不带配件"
-    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "打包分区编号汇总"
-    ' Sheets("设计标准件清单").Delete
-    ' Sheets("设计非标件清单").Delete
-    ' Application.DisplayAlerts = True
+    Call QdDiff(wb)
+    Application.DisplayAlerts = False
+    If wb.Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
+        wb.Sheets("清单汇总处理").Delete
+        wb.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
+        Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
+        ActiveWorkbook.SaveAs filename:=qdcyFilename, FileFormat:=51
+        ActiveWorkbook.Close SaveChanges:=True
+        wb.Sheets("清单差异比对").Activate
+        MsgBox "与设计核对打包数量与设计清单差异"
+        Exit Sub
+    Else
+        wb.Sheets("清单汇总处理").Delete
+        wb.Sheets("清单差异比对").Delete
+    End If
+    wb.Sheets.Add().Name = "非标带配件"
+    wb.Sheets.Add().Name = "非标不带配件"
+    wb.Sheets.Add().Name = "打包分区编号汇总"
+    wb.Sheets("设计标准件清单").Delete
+    wb.Sheets("设计非标件清单").Delete
+    Application.DisplayAlerts = True
 End Sub
 
 Sub createExcel(fileFullPath As String)
@@ -231,7 +234,7 @@ Private Function getAllFile(MyPath As String) As Variant
     For Each SubFolder In Folder.SubFolders
         arrTmp = getAllFile(SubFolder.Path) '递归
         For Each filename In arrTmp
-            If arrTmp(i) = Empty Then
+            If filename = Empty Then
                 Exit For
             End If
             arr(i) = filename
@@ -445,6 +448,110 @@ Private Sub StdOrNoStd(wb As Workbook)
         Next
     End With
 End Sub
+
+' 清单差异比对：沿用了旧名字，不明白意义，不改名
+Private Sub QdDiff(wb As Workbook)
+    wb.Sheets.Add().Name = "清单差异比对"
+    wb.Sheets.Add().Name = "清单汇总处理"
+    wb.Sheets("清单差异比对").Activate
+    Dim krd As Integer
+    Dim krh As Integer
+    Dim krf As Integer
+    Dim krj As Integer
+    Dim krk As Integer
+    Dim krl As Integer
+    Dim cyhangshu As Integer
+    Dim dbhzhangshu As Integer
+    Dim schzhangshu As Integer
+    Dim hdyhangshu As Integer
+    Dim mbbh As String
+    krf = 2
+    krj = 2
+    krl = 2
+    wb.Sheets("清单差异比对").Columns("A:A").HorizontalAlignment = Excel.xlCenter
+    wb.Sheets("清单差异比对").Columns("B:B").HorizontalAlignment = Excel.xlLeft
+    wb.Sheets("清单差异比对").Columns("C:F").HorizontalAlignment = Excel.xlCenter
+    wb.Sheets("清单差异比对").Columns("A:F").Font.Name = "宋体"
+    wb.Sheets("清单差异比对").Rows("1:65535").RowHeight = 18
+
+    Dim srr
+    srr = Array("序号", "模板编号", "打包清单支数", "生产清单支数", "备注")
+    wb.Sheets("清单差异比对").[A1].Resize(1, UBound(srr) + 1) = srr
+    srr = Array("模板编号", "打包清单支数", "", "模板编号", "生产清单支数")
+    wb.Sheets("清单汇总处理").[A1].Resize(1, UBound(srr) + 1) = srr
+    wb.Sheets("清单差异比对").Cells(2, 1).Select
+    ActiveWindow.FreezePanes = True
+    For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.Count, 1).End(xlUp).Row
+        If wb.Sheets("设计打包清单").Range("E" & krd).Value = "生产清单中未找到" Then
+            cyhangshu = krd
+            wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
+            wb.Sheets("清单差异比对").Range("B" & krf) = wb.Sheets("设计打包清单").Range("B" & cyhangshu)
+            wb.Sheets("清单差异比对").Range("C" & krf) = wb.Sheets("设计打包清单").Range("C" & cyhangshu)
+            wb.Sheets("清单差异比对").Range("D" & krf) = 0
+            wb.Sheets("清单差异比对").Range("E" & krf) = "打包清单中有 生产清单中没有的模板编号"
+            wb.Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 38
+            krf = krf + 1
+        Else
+            dbhzhangshu = krd
+            wb.Sheets("清单汇总处理").Range("A" & krj) = wb.Sheets("设计打包清单").Range("B" & dbhzhangshu)
+            wb.Sheets("清单汇总处理").Range("B" & krj) = wb.Sheets("设计打包清单").Range("C" & dbhzhangshu)
+            krj = krj + 1
+        End If
+    Next krd
+    For krd = 2 To wb.Sheets("设计标准件清单").Cells(Rows.Count, 1).End(xlUp).Row
+        schzhangshu = krd
+        wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计标准件清单").Range("C" & schzhangshu)
+        wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计标准件清单").Range("H" & schzhangshu)
+        krl = krl + 1
+    Next krd
+    For krd = 2 To wb.Sheets("设计非标件清单").Cells(Rows.Count, 1).End(xlUp).Row
+        schzhangshu = krd
+        wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计非标件清单").Range("C" & schzhangshu)
+        wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计非标件清单").Range("H" & schzhangshu)
+        krl = krl + 1
+    Next krd
+
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "清单汇总处理!R1C1:R" & (krj - 1) & "C2", Version:=xlPivotTableVersion10).CreatePivotTable _
+        TableDestination:="清单汇总处理!R1C7", TableName:="打包清单汇总透视表", DefaultVersion:= _
+        xlPivotTableVersion10
+        wb.Sheets("清单汇总处理").PivotTables("打包清单汇总透视表").AddFields RowFields:=Array("模板编号")
+    With wb.Sheets("清单汇总处理").PivotTables("打包清单汇总透视表")
+        .AddDataField .PivotFields("打包清单支数"), " 数量", xlSum
+    End With
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "清单汇总处理!R1C4:R" & (krl - 1) & "C5", Version:=xlPivotTableVersion10).CreatePivotTable _
+        TableDestination:="清单汇总处理!R1C10", TableName:="生产清单汇总透视表", DefaultVersion:= _
+        xlPivotTableVersion10
+    wb.Sheets("清单汇总处理").PivotTables("生产清单汇总透视表").AddFields RowFields:=Array("模板编号")
+    With wb.Sheets("清单汇总处理").PivotTables("生产清单汇总透视表")
+        .AddDataField .PivotFields("生产清单支数"), " 数量", xlSum
+    End With
+    For krd = 3 To wb.Sheets("清单汇总处理").Cells(Rows.Count, 10).End(xlUp).Row - 1
+        mbbh = wb.Sheets("清单汇总处理").Range("J" & krd)
+        If wb.Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+            wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
+            wb.Sheets("清单差异比对").Range("B" & krf) = wb.Sheets("清单汇总处理").Range("J" & krd)
+            wb.Sheets("清单差异比对").Range("C" & krf) = 0
+            wb.Sheets("清单差异比对").Range("D" & krf) = wb.Sheets("清单汇总处理").Range("K" & krd)
+            wb.Sheets("清单差异比对").Range("E" & krf) = "生产清单中有 打包清单中没有的模板编号"
+            wb.Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 36
+            krf = krf + 1
+        Else
+            hdyhangshu = wb.Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+            If wb.Sheets("清单汇总处理").Range("H" & hdyhangshu) <> wb.Sheets("清单汇总处理").Range("K" & krd) Then
+                wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
+                wb.Sheets("清单差异比对").Range("B" & krf) = wb.Sheets("清单汇总处理").Range("J" & krd)
+                wb.Sheets("清单差异比对").Range("C" & krf) = wb.Sheets("清单汇总处理").Range("H" & hdyhangshu)
+                wb.Sheets("清单差异比对").Range("D" & krf) = wb.Sheets("清单汇总处理").Range("K" & krd)
+                wb.Sheets("清单差异比对").Range("E" & krf) = "打包清单与生产清单支数不符"
+                wb.Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 37
+                krf = krf + 1
+            End If
+        End If
+    Next krd
+End Sub
+
 
 
 
