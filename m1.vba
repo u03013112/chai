@@ -31,7 +31,6 @@ Sub chose1()
     Dim strfile As String
     Dim brr
     Dim fileFolderName, hbqdFilename As String
-    
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
     
     If dg.Show = -1 Then
@@ -134,56 +133,47 @@ Sub HbqdStep2(wb As Workbook)
         '模板名称是C槽,模板编号带N 则将模板名称改为转角
         '模板名称是平面板,模板编号带小数点,则将模板名称改为平面板切斜
         For i_mbmc = 2 To endb
-                If (.Range("B" & i_mbmc) = "C槽" Or .Range("B" & i_mbmc) = "阴角") And InStr(.Range("C" & i_mbmc), "N") > 0 Then
-                        .Range("B" & i_mbmc) = "转角"
-                End If
-                If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "XC") > 0 Then
-                        .Range("B" & i_mbmc) = "C槽XC"
-                End If
-                If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "SC") > 0 Then
-                        .Range("B" & i_mbmc) = "C槽SC"
-                End If
-                If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), "XP") > 0 Then
-                        .Range("B" & i_mbmc) = "平面板XP"
-                End If
-                If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), ".") > 0 Then
-                        .Range("B" & i_mbmc) = "平面板切斜"
-                End If
-            Next i_mbmc
+            If (.Range("B" & i_mbmc) = "C槽" Or .Range("B" & i_mbmc) = "阴角") And InStr(.Range("C" & i_mbmc), "N") > 0 Then
+                    .Range("B" & i_mbmc) = "转角"
+            End If
+            If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "XC") > 0 Then
+                    .Range("B" & i_mbmc) = "C槽XC"
+            End If
+            If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "SC") > 0 Then
+                    .Range("B" & i_mbmc) = "C槽SC"
+            End If
+            If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), "XP") > 0 Then
+                    .Range("B" & i_mbmc) = "平面板XP"
+            End If
+            If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), ".") > 0 Then
+                    .Range("B" & i_mbmc) = "平面板切斜"
+            End If
+        Next i_mbmc
+        .Tab.ColorIndex = 3
+        .Range("O:O") = .Range("B:B").Value
+        .Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
+        .Columns("O:P").EntireColumn.AutoFit
+        Dim end_O As Integer
+        end_O = Range("O6000").End(xlUp).Row
+        Dim i
+        Dim mbmc As String 'o列的模板名称
+        Dim scdmc As String '生产单名称
+        Dim hangshu As Integer
+        For i = 1 To end_O
+            mbmc = Range("O" & i) '型材宽度
+            If ThisWorkbook.Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                scdmc = "QT"
+            Else
+                hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+                scdmc = ThisWorkbook.Sheets("库(待补充)").Range("E" & hangshu) '生产单命名
+            End If
+            .Range("P" & i) = scdmc
+        Next
     End With
-    wb.Sheets("设计非标件清单").Tab.ColorIndex = 3
-    ' wb.Sheets("设计非标件清单").Activate
 End Sub
 
 Sub HbqdStep3(wb As Workbook)
-    Dim endb As Integer
-    Dim end_O As Integer
-    Dim mbmc As String 'o列的模板名称
-    Dim scdmc As String '生产单名称
-    Dim hangshu As Integer
-
-    With wb.Sheets("设计非标件清单")
-        Columns("B:B").Copy
-        Columns("O:O").Select
-        Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
-            :=False, Transpose:=False
-        Application.CutCopyMode = False
-        Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
-        Columns("O:P").EntireColumn.AutoFit
-        end_O = Range("O6000").End(xlUp).Row
-        Dim i
-        For i = 1 To end_O
-            mbmc = Range("O" & i) '型材宽度
-            If Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                scdmc = "QT"
-            Else
-                hangshu = Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
-                scdmc = Sheets("库(待补充)").Range("E" & hangshu) '生产单命名
-            End If
-            Range("P" & i) = scdmc
-        Next
-    End With
-    'Call 分出标准件非标件
+    Call StdOrNoStd(wb)
     'Call 清单差异比对
     ' Application.DisplayAlerts = False
     ' If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
@@ -392,5 +382,69 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     Next
     wb.Close 0
 End Sub
+
+' 分出标准件非标件 ：沿用了旧名字，不明白意义，不改名
+Private Sub StdOrNoStd(wb As Workbook)
+    Dim i As Integer '用于遍历第一个设计打包清单中的各个编号
+    Dim mbmc As String '模板名称
+    Dim enda As Integer
+    Dim hangshu As Integer
+    Dim k As Integer
+    Dim Quyu As String
+    Dim arr
+    Dim brr
+    Dim endb As Integer
+    '提取图纸编号的辅助列,即去掉前缀以后的部分
+    With wb.Sheets("设计非标件清单")
+        endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        For i = 2 To endb
+            If Mid(.Range("C" & i), 2, 1) = "-" Then
+                .Range("m" & i) = Mid(.Range("C" & i), 3, Len(.Range("C" & i)))
+            Else
+                .Range("m" & i) = .Range("C" & i)
+            End If
+        Next i
+        .Range("N1") = "类型"
+        .Range("N2").FormulaR1C1 = "=VLOOKUP(RC[-12],C[1]:C[2],2,0)"
+        .Range("N2").AutoFill Destination:=.Range("N2:N" & endb)
+    End With
+
+    With wb.Sheets("设计打包清单")
+        brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
+        .[A1].Resize(1, UBound(brr) + 1) = brr
+        enda = .Cells(Rows.Count, 1).End(xlUp).Row
+        Quyu = ""
+        For i = 2 To enda
+            mbmc = .Range("B" & i)
+            '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
+            If wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                If wb.Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                    Range("E" & i) = "生产清单中没有"
+                Else
+                    Range("E" & i) = "标准件"
+                End If
+            Else
+                hangshu = wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+                arr = wb.Sheets("设计非标件清单").Range("D" & hangshu & ":F" & hangshu)
+                .Range("F" & i).Resize(1, 3) = arr
+                .Range("I" & i) = wb.Sheets("设计非标件清单").Range("J" & hangshu)
+                .Range("J" & i) = wb.Sheets("设计非标件清单").Range("B" & hangshu)
+                .Range("K" & i) = wb.Sheets("设计非标件清单").Range("L" & hangshu)
+                .Range("L" & i) = wb.Sheets("设计非标件清单").Range("M" & hangshu)
+                .Range("M" & i) = wb.Sheets("设计非标件清单").Range("N" & hangshu)
+            End If
+            If Len(.Range("E" & i)) = 0 Then
+                If .Range("D" & i) = Quyu Then
+                    k = k + 1
+                Else
+                    k = 1
+                End If
+                .Range("E" & i) = .Range("D" & i) & "-" & k
+                Quyu = .Range("D" & i).Text
+            End If
+        Next
+    End With
+End Sub
+
 
 
