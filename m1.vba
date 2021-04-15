@@ -55,175 +55,44 @@ Sub chose1()
         End If
         '提前建立合并清单文件
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
+
         If fileIsExist(hbqdFilename) Then
             MsgBox (hbqdFilename & " already exist")
         Else
             createExcel (hbqdFilename)
-            initHBQD (hbqdFilename)
         End If
-        
-        '[F2] = dg.SelectedItems(1)
-        '[F3] = hbqdFileName
-        
-        Dim c As Variant
-        
+        Dim hbqdWb As Workbook
+        Set hbqdWb = Workbooks.Open(hbqdFilename)
+        Call HbqdStep1(hbqdWb)
+
+        Dim excelFilename As Variant
         For Each excelFilename In excelFilenames
-            If excelFilename = enmpty Then
+            If excelFilename = Empty Then
                 Exit For
             End If
-            MsgBocx (excelFilename)
-            '设计清单复制 (excelFilename.Name)
+            ' TODO 可以加入进度显示，做到那个文件了，做到第几个文件了，一共有多少文件
+            '[f5] = excelFilename.Name
+            Call SjqdCopy(CStr(excelFilename), hbqdWb)
         Next
+        Call HbqdStep2(hbqdWb)
+        Call HbqdStep3(hbqdWb)
+
+        hbqdWb.Close (True)
         Exit Sub
     Else
-    
         Exit Sub
-    
     End If
     
     Dim wjj_name As String
-    Dim i_mbmc  As Integer '遍历模板名称的遍历字符
-    Dim endb As Integer
     
+    Dim endb As Integer
     wjj_name = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
     
-    With Sheets("设计非标件清单")
-        
-        endb = .Cells(Rows.Count, 2).End(xlUp).Row
-        
-        .Columns("B:B").Replace "平板", "平面板"
-        .Columns("B:B").Replace "转角C槽", "转角"
-        
-        '模板名称是C槽,模板编号带N 则将模板名称改为转角
-        '模板名称是平面板,模板编号带小数点,则将模板名称改为平面板切斜
-        
-        For i_mbmc = 2 To endb
-            
-            If (.Range("B" & i_mbmc) = "C槽" Or .Range("B" & i_mbmc) = "阴角") And InStr(.Range("C" & i_mbmc), "N") > 0 Then
-                
-                .Range("B" & i_mbmc) = "转角"
-            
-            End If
-            
-            If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "XC") > 0 Then
-                
-                .Range("B" & i_mbmc) = "C槽XC"
-            
-            End If
-            
-            If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "SC") > 0 Then
-                
-                .Range("B" & i_mbmc) = "C槽SC"
-            
-            End If
-            
-            If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), "XP") > 0 Then
-                
-                .Range("B" & i_mbmc) = "平面板XP"
-            
-            End If
-            
-            If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), ".") > 0 Then
-                
-                .Range("B" & i_mbmc) = "平面板切斜"
-            
-            End If
-            
-        Next i_mbmc
-        
-    End With
-    
-    Set dg = Nothing
-    Set fso = Nothing
-    
-    Sheets("设计非标件清单").Tab.ColorIndex = 3
-    Sheets("设计非标件清单").Activate
+
     
     ThisWorkbook.SaveAs filename:=strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsx"
     
     '---写出现有模板名称对应的生产单名称----------------------------------------------------------
-    
-    Dim end_O As Integer
-    Dim mbmc As String 'o列的模板名称
-    Dim scdmc As String '生产单名称
-    Dim hangshu As Integer
-    
-    Columns("B:B").Copy
-    Columns("O:O").Select
-    
-    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
-        :=False, Transpose:=False
-        
-    Application.CutCopyMode = False
-    
-    ActiveSheet.Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
-    
-    ActiveSheet.Columns("O:P").EntireColumn.AutoFit
-    
-    end_O = Range("O6000").End(xlUp).Row
-    
-    For i = 1 To end_O
-    
-        mbmc = Range("O" & i) '型材宽度
-        
-        If Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-            
-            scdmc = "QT"
-        
-        Else
-            
-            hangshu = Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
-            scdmc = Sheets("库(待补充)").Range("E" & hangshu) '生产单命名
-        
-        End If
-        
-        Range("P" & i) = scdmc
-    
-    Next
-    
-    Application.DisplayAlerts = False
-    
-    Sheets("库(待补充)").Delete
-    
-    Application.DisplayAlerts = True
-    
-    'Call 分出标准件非标件
-    
-    'Call 清单差异比对
-    
-    Application.DisplayAlerts = False
-    
-    If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
-        
-        Sheets("清单汇总处理").Delete
-        
-        ThisWorkbook.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
-        
-        Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
-        ActiveWorkbook.SaveAs filename:=strfile & wjj_name & "\" & wjj_name & "-清单差异", FileFormat:=51
-        ActiveWorkbook.Close SaveChanges:=True
-        
-        ThisWorkbook.Sheets("清单差异比对").Activate
-        
-        MsgBox "与设计核对打包数量与设计清单差异"
-        
-        Exit Sub
-        
-    Else
-    
-        Sheets("清单汇总处理").Delete
-        Sheets("清单差异比对").Delete
-        
-    End If
-    
-    Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标带配件"
-    Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标不带配件"
-    Sheets.Add(after:=Sheets("设计打包清单")).Name = "打包分区编号汇总"
-    
-    Sheets("设计标准件清单").Delete
-    Sheets("设计非标件清单").Delete
-    
-    Application.DisplayAlerts = True
     
     'Call 打包清单分类
     'Call 拆分到工作簿
@@ -235,10 +104,8 @@ End Sub
 
 ' 初始化合并清单，目前多次打开文件，有优化空间
 ' 只是建立了Sheet，添加了第一行
-Sub initHBQD(hbqdFilename As String)
-    Dim wb As Workbook
+Sub HbqdStep1(wb As Workbook)
     Dim arr(100, 1)
-    Set wb = Workbooks.Open(hbqdFilename)
     
     Application.ScreenUpdating = False
         
@@ -255,10 +122,90 @@ Sub initHBQD(hbqdFilename As String)
         
     brr = Array("序号", "模板名称", "数量", "打包表名")
     wb.Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
-    
-    wb.Close (True)
 End Sub
 
+Sub HbqdStep2(wb As Workbook)
+    Dim endb As Integer
+    Dim i_mbmc  As Integer '遍历模板名称的遍历字符
+    With wb.Sheets("设计非标件清单")
+        endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        .Columns("B:B").Replace "平板", "平面板"
+        .Columns("B:B").Replace "转角C槽", "转角"
+        '模板名称是C槽,模板编号带N 则将模板名称改为转角
+        '模板名称是平面板,模板编号带小数点,则将模板名称改为平面板切斜
+        For i_mbmc = 2 To endb
+                If (.Range("B" & i_mbmc) = "C槽" Or .Range("B" & i_mbmc) = "阴角") And InStr(.Range("C" & i_mbmc), "N") > 0 Then
+                        .Range("B" & i_mbmc) = "转角"
+                End If
+                If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "XC") > 0 Then
+                        .Range("B" & i_mbmc) = "C槽XC"
+                End If
+                If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "SC") > 0 Then
+                        .Range("B" & i_mbmc) = "C槽SC"
+                End If
+                If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), "XP") > 0 Then
+                        .Range("B" & i_mbmc) = "平面板XP"
+                End If
+                If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), ".") > 0 Then
+                        .Range("B" & i_mbmc) = "平面板切斜"
+                End If
+            Next i_mbmc
+    End With
+    wb.Sheets("设计非标件清单").Tab.ColorIndex = 3
+    ' wb.Sheets("设计非标件清单").Activate
+End Sub
+
+Sub HbqdStep3(wb As Workbook)
+    Dim endb As Integer
+    Dim end_O As Integer
+    Dim mbmc As String 'o列的模板名称
+    Dim scdmc As String '生产单名称
+    Dim hangshu As Integer
+
+    With wb.Sheets("设计非标件清单")
+        Columns("B:B").Copy
+        Columns("O:O").Select
+        Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+            :=False, Transpose:=False
+        Application.CutCopyMode = False
+        Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
+        Columns("O:P").EntireColumn.AutoFit
+        end_O = Range("O6000").End(xlUp).Row
+        Dim i
+        For i = 1 To end_O
+            mbmc = Range("O" & i) '型材宽度
+            If Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                scdmc = "QT"
+            Else
+                hangshu = Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+                scdmc = Sheets("库(待补充)").Range("E" & hangshu) '生产单命名
+            End If
+            Range("P" & i) = scdmc
+        Next
+    End With
+    'Call 分出标准件非标件
+    'Call 清单差异比对
+    ' Application.DisplayAlerts = False
+    ' If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
+    '         Sheets("清单汇总处理").Delete
+    '         ThisWorkbook.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
+    '         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
+    '     ActiveWorkbook.SaveAs filename:=strfile & wjj_name & "\" & wjj_name & "-清单差异", FileFormat:=51
+    '     ActiveWorkbook.Close SaveChanges:=True
+    '         ThisWorkbook.Sheets("清单差异比对").Activate
+    '         MsgBox "与设计核对打包数量与设计清单差异"
+    '         Exit Sub
+    '     Else
+    '     Sheets("清单汇总处理").Delete
+    '     Sheets("清单差异比对").Delete
+    '     End If
+    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标带配件"
+    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标不带配件"
+    ' Sheets.Add(after:=Sheets("设计打包清单")).Name = "打包分区编号汇总"
+    ' Sheets("设计标准件清单").Delete
+    ' Sheets("设计非标件清单").Delete
+    ' Application.DisplayAlerts = True
+End Sub
 
 Sub createExcel(fileFullPath As String)
     Dim excelApp, excelWB As Object
@@ -318,8 +265,8 @@ Private Function getArrLen(arr As Variant) As Long
     getArrLen = i
 End Function
 
-'沿用了旧名字，不明白意义，不改名
-Private Sub 设计清单复制(filename As String)
+'设计清单复制 ：沿用了旧名字，不明白意义，不改名
+Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     Dim wb As Workbook
     Dim irow As Integer
     Dim k As Integer
@@ -409,7 +356,7 @@ Private Sub 设计清单复制(filename As String)
             gzbm = .Replace(gzbm, "") '从工作表名称获取是A区还是B区
         End With
         
-        irow = ThisWorkbook.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
+        irow = wbTarget.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
         endb = wb.Sheets(k).Cells(Rows.Count, 2).End(xlUp).Row '
         enda = wb.Sheets(k).Cells(Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
         
@@ -418,8 +365,8 @@ Private Sub 设计清单复制(filename As String)
         End If
         
         arra = wb.Sheets(k).Range("A" & start_row & ":J" & endb)  '设计清单标题是8行,合并从第9行开始
-        endthisa = ThisWorkbook.Worksheets(Target_Sheet).Cells(Rows.Count, 1).End(xlUp).Row
-        ThisWorkbook.Worksheets(Target_Sheet).Range("a" & endthisa + 1).Resize(UBound(arra), 10) = arra
+        endthisa = wbTarget.Worksheets(Target_Sheet).Cells(Rows.Count, 1).End(xlUp).Row
+        wbTarget.Worksheets(Target_Sheet).Range("a" & endthisa + 1).Resize(UBound(arra), 10) = arra
         
         If Len(gzbm) > 0 Then
             If gzbm = "()" Or gzbm = "（）" Then
@@ -434,13 +381,16 @@ Private Sub 设计清单复制(filename As String)
 
         If Target_Sheet = "设计打包清单" Then
             If InStr(wb.FullName, "备用") > 0 Then
-                ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm & "-(BYJ)"
+                wbTarget.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm & "-(BYJ)"
             Else
-                ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
+                wbTarget.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
             End If
         Else
-            ThisWorkbook.Worksheets(Target_Sheet).Range("k" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
-            If Len(p_qufj) > 0 Then ThisWorkbook.Worksheets(Target_Sheet).Range("L" & endthisa + 1).Resize(UBound(arra), 1) = p_qufj
+            wbTarget.Worksheets(Target_Sheet).Range("k" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
+            If Len(p_qufj) > 0 Then wbTarget.Worksheets(Target_Sheet).Range("L" & endthisa + 1).Resize(UBound(arra), 1) = p_qufj
         End If
-        wb.Close 0
+    Next
+    wb.Close 0
 End Sub
+
+
