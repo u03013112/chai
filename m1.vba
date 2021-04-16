@@ -74,7 +74,6 @@ Sub chose1()
             '[f5] = excelFilename.Name
             Call SjqdCopy(CStr(excelFilename), hbqdWb)
         Next
-        Exit Sub
         Call HbqdStep2(hbqdWb)
         qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
         Call HbqdStep3(hbqdWb, qdcyFilename)
@@ -157,13 +156,13 @@ Sub HbqdStep2(wb As Workbook)
         .Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
         .Columns("O:P").EntireColumn.AutoFit
         Dim end_O As Integer
-        end_O = Range("O6000").End(xlUp).Row
+        end_O = .Range("O6000").End(xlUp).Row
         Dim i
         Dim mbmc As String 'o列的模板名称
         Dim scdmc As String '生产单名称
         Dim hangshu As Integer
         For i = 1 To end_O
-            mbmc = Range("O" & i) '型材宽度
+            mbmc = .Range("O" & i) '型材宽度
             If ThisWorkbook.Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                 scdmc = "QT"
             Else
@@ -422,9 +421,9 @@ Private Sub StdOrNoStd(wb As Workbook)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
             If wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                 If wb.Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                    Range("E" & i) = "生产清单中没有"
+                    .Range("E" & i) = "生产清单中没有"
                 Else
-                    Range("E" & i) = "标准件"
+                    .Range("E" & i) = "标准件"
                 End If
             Else
                 hangshu = wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
@@ -511,7 +510,7 @@ Private Sub QdDiff(wb As Workbook)
         krl = krl + 1
     Next krd
 
-    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
         "清单汇总处理!R1C1:R" & (krj - 1) & "C2", Version:=xlPivotTableVersion10).CreatePivotTable _
         TableDestination:="清单汇总处理!R1C7", TableName:="打包清单汇总透视表", DefaultVersion:= _
         xlPivotTableVersion10
@@ -519,7 +518,7 @@ Private Sub QdDiff(wb As Workbook)
     With wb.Sheets("清单汇总处理").PivotTables("打包清单汇总透视表")
         .AddDataField .PivotFields("打包清单支数"), " 数量", xlSum
     End With
-    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
         "清单汇总处理!R1C4:R" & (krl - 1) & "C5", Version:=xlPivotTableVersion10).CreatePivotTable _
         TableDestination:="清单汇总处理!R1C10", TableName:="生产清单汇总透视表", DefaultVersion:= _
         xlPivotTableVersion10
