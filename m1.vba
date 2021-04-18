@@ -63,6 +63,7 @@ Sub chose1()
 
         Dim hbqdWb As Workbook
         Set hbqdWb = Workbooks.Open(hbqdFilename)
+        'hbqdWb.Windows(1).Visible = False
         Call HbqdStep1(hbqdWb)
 
         Dim excelFilename As Variant
@@ -108,7 +109,7 @@ End Sub
 Sub HbqdStep1(wb As Workbook)
     Dim arr(100, 1)
     
-    Application.ScreenUpdating = False
+    'Application.ScreenUpdating = False
         
     wb.Sheets.Add().Name = "设计非标件清单"
     wb.Sheets.Add().Name = "设计标准件清单"
@@ -118,11 +119,11 @@ Sub HbqdStep1(wb As Workbook)
          
     Dim brr
     brr = Array("序号", "模板名称", "模板编号", "W1", "W2", "L", "单件面积", "数量", "总件面积", "图纸编号", "工作表名", "是否带配件")
-    wb.Sheets("设计标准件清单").[A1].Resize(1, UBound(brr) + 1) = brr
-    wb.Sheets("设计非标件清单").[A1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计标准件清单").[a1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计非标件清单").[a1].Resize(1, UBound(brr) + 1) = brr
         
     brr = Array("序号", "模板名称", "数量", "打包表名")
-    wb.Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计打包清单").[a1].Resize(1, UBound(brr) + 1) = brr
 End Sub
 
 Sub HbqdStep2(wb As Workbook)
@@ -176,6 +177,7 @@ End Sub
 
 Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
     Call StdOrNoStd(wb)
+    MsgBox ("StdOrNoStd ok")
     Call QdDiff(wb)
     Application.DisplayAlerts = False
     If wb.Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
@@ -188,14 +190,14 @@ Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
         MsgBox "与设计核对打包数量与设计清单差异"
         Exit Sub
     Else
-        wb.Sheets("清单汇总处理").Delete
-        wb.Sheets("清单差异比对").Delete
+        'wb.Sheets("清单汇总处理").Delete
+        'wb.Sheets("清单差异比对").Delete
     End If
     wb.Sheets.Add().Name = "非标带配件"
     wb.Sheets.Add().Name = "非标不带配件"
     wb.Sheets.Add().Name = "打包分区编号汇总"
-    wb.Sheets("设计标准件清单").Delete
-    wb.Sheets("设计非标件清单").Delete
+    'wb.Sheets("设计标准件清单").Delete
+    'wb.Sheets("设计非标件清单").Delete
     Application.DisplayAlerts = True
 End Sub
 
@@ -280,6 +282,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     Dim czgzbm '记录工作表名
     
     Set wb = Workbooks.Open(filename) '打开表格
+    'wb.Windows(1).Visible = False
     wb_name = Split(wb.FullName, "\")(UBound(Split(wb.FullName, "\")))
     '区域附加
     If InStr(wb_name, "孔") = 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
@@ -328,10 +331,10 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     For k = 1 To wb.Worksheets.Count
         If InStr(wb.FullName, "打包") = 0 Then
             '根据"数量"所在的位置调整行或者列
-            czgzbm = Worksheets(k).Name
+            czgzbm = wb.Worksheets(k).Name
             'Set range_target = wb.Sheets(czgzbm).Range("A1:K9")
-            r_target = Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Row
-            c_target = Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Column
+            r_target = wb.Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Row
+            c_target = wb.Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Column
             If r_target = 5 Then
                 wb.Sheets(k).Rows("5:6").Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
             ElseIf r_target = 6 Then
@@ -349,8 +352,8 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
         End With
         
         irow = wbTarget.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
-        endb = wb.Sheets(k).Cells(Rows.Count, 2).End(xlUp).Row '
-        enda = wb.Sheets(k).Cells(Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
+        endb = wb.Sheets(k).Cells(wb.Sheets(k).Rows.Count, 2).End(xlUp).Row '
+        enda = wb.Sheets(k).Cells(wb.Sheets(k).Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
         
         If endb - enda > 2 Then
             endb = enda - 1
@@ -385,6 +388,16 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     wb.Close 0
 End Sub
 
+Sub test()
+    Dim hbqdFilename As String
+    hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
+    Dim hbqdWb As Workbook
+    Set hbqdWb = Workbooks.Open(hbqdFilename)
+    hbqdWb.Windows(1).Visible = False
+    Call StdOrNoStd(hbqdWb)
+    hbqdWb.Close (False)
+End Sub
+
 ' 分出标准件非标件 ：沿用了旧名字，不明白意义，不改名
 Private Sub StdOrNoStd(wb As Workbook)
     Dim i As Integer '用于遍历第一个设计打包清单中的各个编号
@@ -410,17 +423,25 @@ Private Sub StdOrNoStd(wb As Workbook)
         .Range("N2").FormulaR1C1 = "=VLOOKUP(RC[-12],C[1]:C[2],2,0)"
         .Range("N2").AutoFill Destination:=.Range("N2:N" & endb)
     End With
-
+    MsgBox ("StdOrNoStd 1 ok")
+    
+    Dim sjfbqd As Worksheet
+    Set sjfbqd = wb.Sheets("设计非标件清单")
     With wb.Sheets("设计打包清单")
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
-        .[A1].Resize(1, UBound(brr) + 1) = brr
+        .[a1].Resize(1, UBound(brr) + 1) = brr
         enda = .Cells(Rows.Count, 1).End(xlUp).Row
+        enda = 500
         Quyu = ""
+        
+        ThisWorkbook.Sheets(1).[f7] = enda
         For i = 2 To enda
+            ThisWorkbook.Sheets(1).[f6] = i
+            
             mbmc = .Range("B" & i)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
-            If wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                If wb.Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+            If sjfbqd.Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                If sjfbqd.Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                     .Range("E" & i) = "生产清单中没有"
                 Else
                     .Range("E" & i) = "标准件"
@@ -444,8 +465,9 @@ Private Sub StdOrNoStd(wb As Workbook)
                 .Range("E" & i) = .Range("D" & i) & "-" & k
                 Quyu = .Range("D" & i).Text
             End If
-        Next
+        Next i
     End With
+    MsgBox ("StdOrNoStd 2 ok")
 End Sub
 
 ' 清单差异比对：沿用了旧名字，不明白意义，不改名
@@ -475,9 +497,9 @@ Private Sub QdDiff(wb As Workbook)
 
     Dim srr
     srr = Array("序号", "模板编号", "打包清单支数", "生产清单支数", "备注")
-    wb.Sheets("清单差异比对").[A1].Resize(1, UBound(srr) + 1) = srr
+    wb.Sheets("清单差异比对").[a1].Resize(1, UBound(srr) + 1) = srr
     srr = Array("模板编号", "打包清单支数", "", "模板编号", "生产清单支数")
-    wb.Sheets("清单汇总处理").[A1].Resize(1, UBound(srr) + 1) = srr
+    wb.Sheets("清单汇总处理").[a1].Resize(1, UBound(srr) + 1) = srr
     wb.Sheets("清单差异比对").Cells(2, 1).Select
     ActiveWindow.FreezePanes = True
     For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.Count, 1).End(xlUp).Row
@@ -550,6 +572,8 @@ Private Sub QdDiff(wb As Workbook)
         End If
     Next krd
 End Sub
+
+
 
 
 
