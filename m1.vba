@@ -1,5 +1,8 @@
 Option Explicit
 
+' 整体思路再次更改，仍旧需要在本文件中进行主要数据操作，保证各种透视表能够正常工作，然后将需要的表格保存到指定文件
+' 中间拆分的过程仍然用新的这版，保障中间上下文明了
+
 Function dirIsExist(dirFullPath As String) As Boolean
  Dim fso As Object
  Dim ret As Boolean

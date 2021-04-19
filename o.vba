@@ -5,7 +5,7 @@ Option Explicit
 ' 另外的需求就是再做一个界面用于展示，这样样貌会比较漂亮
 ' 目前的文件大部分保持不动
 
-Dim fso As Object, arr(1 To 10 ^ 2, 1 To 1), i
+Dim fso As Object, arr(1 To 100, 1 To 1), i
 Dim dg As FileDialog
 
 Sub A合并拆分非标件清单()
@@ -120,9 +120,9 @@ Sub A合并拆分非标件清单()
     Sheets("设计非标件清单").Tab.ColorIndex = 3
     Sheets("设计非标件清单").Activate
     
-    Dim hbqdFilename As String
-    hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
-    Call saveHbqd(hbqdFilename)
+    ' Dim hbqdFilename As String
+    ' hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
+    ' Call saveHbqd(hbqdFilename)
     
     ' ThisWorkbook.SaveAs FileName:=strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
     
@@ -168,7 +168,7 @@ Sub A合并拆分非标件清单()
     
     Application.DisplayAlerts = False
     
-    Sheets("库(待补充)").Delete
+    ' Sheets("库(待补充)").Delete
     
     Application.DisplayAlerts = True
     
@@ -213,6 +213,10 @@ Sub A合并拆分非标件清单()
     Call 打包清单分类
     Call 拆分到工作簿
     
+    Dim hbqdFilename As String
+    hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
+    Call saveHbqd(hbqdFilename)
+
     Application.ScreenUpdating = True
     
     MsgBox "拆分完毕"
@@ -393,8 +397,8 @@ Private Sub 设计清单复制()
             End With
             
             irow = ThisWorkbook.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
-            endb = wb.Sheets(k).Cells(Rows.Count, 2).End(xlUp).Row '
-            enda = wb.Sheets(k).Cells(Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
+            endb = wb.Sheets(k).Cells(65535, 2).End(xlUp).Row '
+            enda = wb.Sheets(k).Cells(65535, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
             
             If endb - enda > 2 Then
                 
@@ -756,9 +760,10 @@ Private Sub 打包清单分类()
     
     Dim dbnum  As String '打包num,即打包分区编号汇总移动出来后新的表格名字
     
-    dbnum = Replace(ThisWorkbook.Name, "合并清单.xlsm", "打包分区编号汇总.xlsx")
+    ' dbnum = Replace(ThisWorkbook.Name, "合并清单.xlsm", "打包分区编号汇总.xlsx")
     
-    ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & dbnum
+    ' ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & dbnum
+    ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\打包分区编号汇总.xlsx"
     ActiveWorkbook.Close
     
     '先对W1,W2做一下调整
@@ -1163,7 +1168,7 @@ Private Sub 拆分到工作簿()
     
     For Each ws In Worksheets
         
-        If Left(ws.Name, 2) <> "设计" Then
+        If Left(ws.Name, 2) <> "设计" And (ws.Name <> "Sheet1") And (ws.Name <> "库(待补充)") Then
             
             Set d = CreateObject("scripting.dictionary")
             
@@ -1236,7 +1241,6 @@ Private Sub 拆分到工作簿()
             
             Set k = Nothing
             Set t = Nothing
-        
         End If
     
     Next
@@ -1276,7 +1280,7 @@ Private Sub copySheet(src As Worksheet, dst As Worksheet)
     ColumnCount = ur.Columns.Count
     rowCount = ur.Rows.Count
 
-    dst.[a1].Resize(rowCount, ColumnCount) = src.UsedRange.Value
+    dst.[A1].Resize(rowCount, ColumnCount) = src.UsedRange.Value
 End Sub
 
 Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
@@ -1291,38 +1295,42 @@ Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
 End Function
 
 ' Private Sub saveHbqd(filename As String)
-Sub saveHbqd()
-    Dim filename As String
-    filename = "C:\Users\u03013112\Documents\new-412-1\a.xlsx"
-    If fileIsExist(filename) Then
+Sub saveHbqd(FileName As String)
+    'Dim filename As String
+    'filename = "C:\Users\u03013112\Documents\new-412-1\a.xlsx"
+    If fileIsExist(FileName) Then
     ' TODO 询问是否要清除重来
     Else
-        Call createExcel(filename)
+        Call createExcel(FileName)
     End If
 
     Dim thisWb As Workbook
     Dim wb As Workbook
     Set thisWb = ActiveWorkbook
-    Set wb = Workbooks.Open(filename)
+    Set wb = Workbooks.Open(FileName)
     
    ' 暂时只复制3个表，其他的貌似不需要
    Application.DisplayAlerts = False
-    If isSheetExist(wb, "设计非标件清单") Then
-        wb.Sheets("设计非标件清单").Delete
-    End If
-    wb.Sheets.Add().Name = "设计非标件清单"
-    Call copySheet(thisWb.Sheets("设计非标件清单"), wb.Sheets("设计非标件清单"))
-
-    If isSheetExist(wb, "设计标准件清单") Then
-        wb.Sheets("设计标准件清单").Delete
-    End If
-    wb.Sheets.Add().Name = "设计标准件清单"
-    Call copySheet(thisWb.Sheets("设计标准件清单"), wb.Sheets("设计标准件清单"))
-
     If isSheetExist(wb, "设计打包清单") Then
         wb.Sheets("设计打包清单").Delete
     End If
     wb.Sheets.Add().Name = "设计打包清单"
     Call copySheet(thisWb.Sheets("设计打包清单"), wb.Sheets("设计打包清单"))
+
+    If isSheetExist(wb, "非标不带配件") Then
+        wb.Sheets("非标不带配件").Delete
+    End If
+    wb.Sheets.Add().Name = "非标不带配件"
+    Call copySheet(thisWb.Sheets("非标不带配件"), wb.Sheets("非标不带配件"))
+
+    If isSheetExist(wb, "非标带配件") Then
+        wb.Sheets("非标带配件").Delete
+    End If
+    wb.Sheets.Add().Name = "非标带配件"
+    Call copySheet(thisWb.Sheets("非标带配件"), wb.Sheets("非标带配件"))
     Application.DisplayAlerts = True
 End Sub
+
+
+
+
