@@ -174,48 +174,6 @@ Private Sub 合并设计传递(MyPath As String)
     
 End Sub
 
-' Private Sub saveHbqd(filename As String)
-Sub saveHbqd()
-    ' Dim filename As String
-    ' Dim excelApp, excelWB As Object
-    ' Dim savePath, saveName As String
-
-    filename = "C:\Users\u03013112\Documents\new-412-1\a.xlsx"
-    ' Set excelApp = CreateObject("Excel.Application")
-    ' Set excelWB = excelApp.Workbooks.Add
-    ' excelWB.SaveAs filename
-    ' excelApp.Quit
-
-    Dim thisWb As Workbook
-    Dim wb As Workbook
-    Set thisWb = ActiveWorkbook
-    Set wb = Workbooks.Open(filename)
-    if isSheetExist(wb,"1s") = False Then
-        wb.Sheets.Add().Name = "1s"
-    End If
-    Call copySheet(thisWb.Sheets("Sheet1"), wb.Sheets("1s"))
-End Sub
-
-Private Sub copySheet(src As Worksheets,dst As Worksheets)
-    Dim ur As Range
-    Dim rowCount As Long
-    Dim ColumnCount As Long
-    Set ur = src.UsedRange
-    ColumnCount = ur.Columns.Count
-    rowCount = ur.Rows.Count
-
-    dst.[a1].Resize(rowCount, columnCount) = src.UsedRange.Value
-End Sub
-
-Private Function isSheetExist(wb As Workbook,shtName As String) As Boolean
-    For Each sht In wb.Sheets
-        If sht.Name = shtName Then
-            return True
-        End If
-    Next
-    return False
-End Sub
-
 Private Sub 设计清单复制()
 
     Dim wb As Workbook
@@ -960,3 +918,82 @@ Private Sub 拆分到工作簿()
 
 End Sub
 
+Function fileIsExist(fileFullPath As String) As Boolean
+ Dim fso As Object
+ Dim ret As Boolean
+ Set fso = CreateObject("Scripting.FileSystemObject")
+ ret = False
+ If fso.FileExists(fileFullPath) = True Then
+     ret = True
+ End If
+  Set fso = Nothing
+  fileIsExist = ret
+End Function
+
+Sub createExcel(fileFullPath As String)
+    Dim excelApp, excelWB As Object
+    Dim savePath, saveName As String
+
+    Set excelApp = CreateObject("Excel.Application")
+    Set excelWB = excelApp.Workbooks.Add
+
+    excelWB.SaveAs fileFullPath
+    excelApp.Quit
+End Sub
+
+Private Sub copySheet(src As Worksheet, dst As Worksheet)
+    Dim ur As Range
+    Dim rowCount As Long
+    Dim ColumnCount As Long
+    Set ur = src.UsedRange
+    ColumnCount = ur.Columns.Count
+    rowCount = ur.Rows.Count
+
+    dst.[a1].Resize(rowCount, ColumnCount) = src.UsedRange.Value
+End Sub
+
+Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
+    Dim sht As Worksheet
+    For Each sht In wb.Sheets
+        If sht.Name = shtName Then
+            isSheetExist = True
+            Exit Function
+        End If
+    Next
+    isSheetExist = False
+End Function
+
+' Private Sub saveHbqd(filename As String)
+Sub saveHbqd()
+    Dim filename As String
+    filename = "C:\Users\u03013112\Documents\new-412-1\a.xlsx"
+    If fileIsExist(filename) Then
+    ' TODO 询问是否要清除重来
+    Else
+        Call createExcel(filename)
+    End If
+
+    Dim thisWb As Workbook
+    Dim wb As Workbook
+    Set thisWb = ActiveWorkbook
+    Set wb = Workbooks.Open(filename)
+    
+   ' 暂时只复制3个表，其他的貌似不需要
+    If isSheetExist(wb, "设计非标件清单") Then
+        wb.Sheets("设计非标件清单").Delete
+    End If
+    wb.Sheets.Add().Name = "设计非标件清单"
+    Call copySheet(thisWb.Sheets("设计非标件清单"), wb.Sheets("设计非标件清单"))
+
+    If isSheetExist(wb, "设计标准件清单") Then
+        wb.Sheets("设计标准件清单").Delete
+    End If
+    wb.Sheets.Add().Name = "设计标准件清单"
+    Call copySheet(thisWb.Sheets("设计标准件清单"), wb.Sheets("设计标准件清单"))
+
+    If isSheetExist(wb, "设计打包清单") Then
+        wb.Sheets("设计打包清单").Delete
+    End If
+    wb.Sheets.Add().Name = "设计打包清单"
+    Call copySheet(thisWb.Sheets("设计打包清单"), wb.Sheets("设计打包清单"))
+End Sub
