@@ -19,26 +19,43 @@ Sub A合并拆分非标件清单()
     If dg.Show = -1 Then
     
         Application.ScreenUpdating = False
+        Application.DisplayAlerts = False
+        If isSheetExist(ThisWorkbook, "设计非标件清单") Then
+            ThisWorkbook.Sheets("设计非标件清单").Delete
+        End If
+        If isSheetExist(ThisWorkbook, "设计标准件清单") Then
+            ThisWorkbook.Sheets("设计标准件清单").Delete
+        End If
+        If isSheetExist(ThisWorkbook, "设计打包清单") Then
+            ThisWorkbook.Sheets("设计打包清单").Delete
+        End If
         Sheets.Add().Name = "设计非标件清单"
         Sheets.Add().Name = "设计标准件清单"
         Sheets.Add().Name = "设计打包清单"
-        Application.DisplayAlerts = False
         ' Sheets("ZXD").Delete
         ' Sheets("Sheet1").Delete
         ' Sheets("erp").Delete
         ' Sheets("计算用表").Delete
         Application.DisplayAlerts = True
+        
         ThisWorkbook.Sheets("设计标准件清单").Activate
+        
         brr = Array("序号", "模板名称", "模板编号", "W1", "W2", "L", "单件面积", "数量", "总件面积", "图纸编号", "工作表名", "是否带配件")
+        
         [A1].Resize(1, UBound(brr) + 1) = brr
         Sheets("设计非标件清单").[A1].Resize(1, UBound(brr) + 1) = brr
+        
         brr = Array("序号", "模板名称", "数量", "打包表名")
+        
         Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
+        
         strfile = dg.InitialFileName
         Set fso = CreateObject("scripting.filesystemobject")
+        
         Erase arr()
         i = 0
         合并设计传递 dg.SelectedItems(1)
+        
     Else
     
         Exit Sub
@@ -52,28 +69,49 @@ Sub A合并拆分非标件清单()
     wjj_name = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
     
     With Sheets("设计非标件清单")
+        
         endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        
         .Columns("B:B").Replace "平板", "平面板"
         .Columns("B:B").Replace "转角C槽", "转角"
+        
         '模板名称是C槽,模板编号带N 则将模板名称改为转角
         '模板名称是平面板,模板编号带小数点,则将模板名称改为平面板切斜
+        
         For i_mbmc = 2 To endb
+            
             If (.Range("B" & i_mbmc) = "C槽" Or .Range("B" & i_mbmc) = "阴角") And InStr(.Range("C" & i_mbmc), "N") > 0 Then
+                
                 .Range("B" & i_mbmc) = "转角"
+            
             End If
+            
             If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "XC") > 0 Then
+                
                 .Range("B" & i_mbmc) = "C槽XC"
+            
             End If
+            
             If .Range("B" & i_mbmc) = "C槽" And InStr(.Range("C" & i_mbmc), "SC") > 0 Then
+                
                 .Range("B" & i_mbmc) = "C槽SC"
+            
             End If
+            
             If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), "XP") > 0 Then
+                
                 .Range("B" & i_mbmc) = "平面板XP"
+            
             End If
+            
             If .Range("B" & i_mbmc) = "平面板" And InStr(.Range("C" & i_mbmc), ".") > 0 Then
+                
                 .Range("B" & i_mbmc) = "平面板切斜"
+            
             End If
+            
         Next i_mbmc
+        
     End With
     
     Set dg = Nothing
@@ -81,6 +119,10 @@ Sub A合并拆分非标件清单()
     
     Sheets("设计非标件清单").Tab.ColorIndex = 3
     Sheets("设计非标件清单").Activate
+    
+    Dim hbqdFilename As String
+    hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
+    Call saveHbqd(hbqdFilename)
     
     ' ThisWorkbook.SaveAs FileName:=strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
     
@@ -96,6 +138,7 @@ Sub A合并拆分非标件清单()
     
     Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
         :=False, Transpose:=False
+        
     Application.CutCopyMode = False
     
     ActiveSheet.Range("$O$1:$O$" & endb).RemoveDuplicates Columns:=1, Header:=xlNo
@@ -107,44 +150,73 @@ Sub A合并拆分非标件清单()
     For i = 1 To end_O
     
         mbmc = Range("O" & i) '型材宽度
+        
         If Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+            
             scdmc = "QT"
+        
         Else
-                hangshu = Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+            
+            hangshu = Sheets("库(待补充)").Columns(4).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
             scdmc = Sheets("库(待补充)").Range("E" & hangshu) '生产单命名
+        
         End If
+        
         Range("P" & i) = scdmc
     
     Next
+    
     Application.DisplayAlerts = False
+    
     Sheets("库(待补充)").Delete
+    
     Application.DisplayAlerts = True
+    
     Call 分出标准件非标件
+    
     Call 清单差异比对
+    
     Application.DisplayAlerts = False
+    
     If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
+        
         Sheets("清单汇总处理").Delete
+        
         ThisWorkbook.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
+        
         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
         ActiveWorkbook.SaveAs FileName:=strfile & wjj_name & "\" & wjj_name & "-清单差异", FileFormat:=51
         ActiveWorkbook.Close SaveChanges:=True
+        
         ThisWorkbook.Sheets("清单差异比对").Activate
+        
         MsgBox "与设计核对打包数量与设计清单差异"
+        
         Exit Sub
+        
     Else
+    
         Sheets("清单汇总处理").Delete
         Sheets("清单差异比对").Delete
+        
     End If
+    
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标带配件"
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标不带配件"
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "打包分区编号汇总"
+    
     Sheets("设计标准件清单").Delete
     Sheets("设计非标件清单").Delete
+    
     Application.DisplayAlerts = True
+    
     Call 打包清单分类
     Call 拆分到工作簿
+    
     Application.ScreenUpdating = True
+    
     MsgBox "拆分完毕"
+    
 End Sub
 
 Private Sub 合并设计传递(MyPath As String)
@@ -162,7 +234,9 @@ Private Sub 合并设计传递(MyPath As String)
     
             i = i + 1: arr(i, 1) = FileName
             设计清单复制
+        
         End If
+        
     Next
     
     '取文件夹进行递归操作
@@ -170,6 +244,7 @@ Private Sub 合并设计传递(MyPath As String)
     
         'SubFolders 返回由指定文件夹中所有子文件夹(包括隐藏文件夹和系统文件夹)
         合并设计传递 SubFolder.path '递归
+        
     Next
     
 End Sub
@@ -201,98 +276,174 @@ Private Sub 设计清单复制()
     
         Set wb = Workbooks.Open(arr(i, 1)) '打开表格
         wb_name = Split(wb.FullName, "\")(UBound(Split(wb.FullName, "\")))
+        
         If InStr(wb_name, "孔") = 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
-                qufj = "BZJ":
-            ElseIf InStr(wb_name, "孔") > 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
-                qufj = "BK"
+            
+            qufj = "BZJ":
+            
+        ElseIf InStr(wb_name, "孔") > 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
+            
+            qufj = "BK"
+        
         ElseIf InStr(wb_name, "墙") > 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") = 0 Then
-                qufj = "Q"
+            
+            qufj = "Q"
+        
         ElseIf InStr(wb_name, "梁") > 0 Then
-                qufj = "L"
+            
+            qufj = "L"
+        
         ElseIf InStr(wb_name, "顶板") > 0 Or InStr(wb_name, "楼面") > 0 Then
-                qufj = "LM"
+            
+            qufj = "LM"
+        
         ElseIf InStr(wb_name, "吊模") > 0 Then
-                qufj = "DM"
-            ElseIf InStr(wb_name, "吊架") > 0 Then
-                qufj = "DJ"
+            
+            qufj = "DM"
+            
+        ElseIf InStr(wb_name, "吊架") > 0 Then
+            
+            qufj = "DJ"
+        
         ElseIf InStr(wb_name, "节点") > 0 Then
-                qufj = "JD"
+            
+            qufj = "JD"
+        
         ElseIf InStr(wb_name, "楼梯") > 0 Then
-                qufj = "LT"
+            
+            qufj = "LT"
+        
         End If
+        
         If InStr(wb.FullName, "带配件") > 0 And InStr(wb.FullName, "不带配件") = 0 Then
-                p_qufj = "带配件"
+            
+            p_qufj = "带配件"
+        
         End If
+        
         If InStr(wb.FullName, "变层") > 0 And InStr(wb.FullName, "基本层") = 0 Then
-                bc_qufj = "BC"
+            
+            bc_qufj = "BC"
+        
         Else
-                bc_qufj = ""
+            
+            bc_qufj = ""
+        
         End If
+        
         '通过工作簿名称知道是那个位置区域的,以方便和工作表名称一起做编号依据
         If InStr(wb.FullName, "打包") > 0 Then
+        
             Target_Sheet = "设计打包清单"
             start_row = 3
+        
         Else
+        
             If InStr(wb_name, "孔") = 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
-                        Target_Sheet = "设计标准件清单"
-                Else
-                        Target_Sheet = "设计非标件清单"
-                End If
-                start_row = 9
+                
+                Target_Sheet = "设计标准件清单"
+            
+            Else
+                
+                Target_Sheet = "设计非标件清单"
+            
+            End If
+            
+            start_row = 9
+        
         End If
+        
         For k = 1 To wb.Worksheets.Count
-                If InStr(wb.FullName, "打包") = 0 Then
-                        '根据"数量"所在的位置调整行或者列
+            
+            If InStr(wb.FullName, "打包") = 0 Then
+                
+                '根据"数量"所在的位置调整行或者列
                 czgzbm = Worksheets(k).Name
-                        'Set range_target = wb.Sheets(czgzbm).Range("A1:K9")
+                
+                'Set range_target = wb.Sheets(czgzbm).Range("A1:K9")
                 r_target = Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Row
                 c_target = Sheets(czgzbm).Range("A1:K9").Find(What:="数量").Column
-                        If r_target = 5 Then
-                                wb.Sheets(k).Rows("5:6").Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
-                        ElseIf r_target = 6 Then
-                                wb.Sheets(k).Rows("5:5").Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
-                        End If
+                
+                If r_target = 5 Then
+                    
+                    wb.Sheets(k).Rows("5:6").Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
+                
+                ElseIf r_target = 6 Then
+                    
+                    wb.Sheets(k).Rows("5:5").Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
+                
+                End If
     
                 If c_target = 7 Then
-                              wb.Sheets(k).Columns("G:G").Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
-                        End If
+                   
+                   wb.Sheets(k).Columns("G:G").Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+                
                 End If
-                gzbm = wb.Sheets(k).Name '工作表名称
-                With CreateObject("VBSCRIPT.REGEXP")
-                        .Global = True
+            
+            End If
+            
+            gzbm = wb.Sheets(k).Name '工作表名称
+            
+            With CreateObject("VBSCRIPT.REGEXP")
+                
+                .Global = True
                 .Pattern = "[^!-~]"
                 gzbm = .Replace(gzbm, "") '从工作表名称获取是A区还是B区
-                End With
-                irow = ThisWorkbook.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
+            
+            End With
+            
+            irow = ThisWorkbook.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
             endb = wb.Sheets(k).Cells(Rows.Count, 2).End(xlUp).Row '
             enda = wb.Sheets(k).Cells(Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
-                If endb - enda > 2 Then
-                        endb = enda - 1
-                End If
-                arra = wb.Sheets(k).Range("A" & start_row & ":J" & endb)  '设计清单标题是8行,合并从第9行开始
+            
+            If endb - enda > 2 Then
+                
+                endb = enda - 1
+            
+            End If
+            
+            arra = wb.Sheets(k).Range("A" & start_row & ":J" & endb)  '设计清单标题是8行,合并从第9行开始
             endthisa = ThisWorkbook.Worksheets(Target_Sheet).Cells(Rows.Count, 1).End(xlUp).Row
             ThisWorkbook.Worksheets(Target_Sheet).Range("a" & endthisa + 1).Resize(UBound(arra), 10) = arra
-                If Len(gzbm) > 0 Then
-                        If gzbm = "()" Or gzbm = "（）" Then
-                                gzbm = ""
-                        Else
-                                gzbm = "-" & gzbm
-                        End If
-                Else
+            
+            If Len(gzbm) > 0 Then
+                
+                If gzbm = "()" Or gzbm = "（）" Then
+                    
                     gzbm = ""
-                End If
-    
-            If Target_Sheet = "设计打包清单" Then
-                        If InStr(wb.FullName, "备用") > 0 Then
-                                ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm & "-(BYJ)"
-                        Else
-                                ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
-                        End If
+                
                 Else
+                    
+                    gzbm = "-" & gzbm
+                
+                End If
+            
+            Else
+            
+                gzbm = ""
+            
+            End If
+            
+
+            If Target_Sheet = "设计打包清单" Then
+                
+                If InStr(wb.FullName, "备用") > 0 Then
+                    
+                    ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm & "-(BYJ)"
+                
+                Else
+                    
+                    ThisWorkbook.Worksheets(Target_Sheet).Range("D" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
+                
+                End If
+            
+            Else
                 ThisWorkbook.Worksheets(Target_Sheet).Range("k" & endthisa + 1).Resize(UBound(arra), 1) = qufj & bc_qufj & gzbm
                 If Len(p_qufj) > 0 Then ThisWorkbook.Worksheets(Target_Sheet).Range("L" & endthisa + 1).Resize(UBound(arra), 1) = p_qufj
             End If
-            Next k
+            
+        Next k
+        
         wb.Close 0
     
     End If
@@ -315,12 +466,19 @@ Private Sub 分出标准件非标件()
     With Sheets("设计非标件清单")
      
         endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        
         For i = 2 To endb
-                If Mid(.Range("C" & i), 2, 1) = "-" Then
-                        .Range("m" & i) = Mid(.Range("C" & i), 3, Len(.Range("C" & i)))
-                Else
-                    .Range("m" & i) = .Range("C" & i)
-                End If
+            
+            If Mid(.Range("C" & i), 2, 1) = "-" Then
+                
+                .Range("m" & i) = Mid(.Range("C" & i), 3, Len(.Range("C" & i)))
+            
+            Else
+            
+                .Range("m" & i) = .Range("C" & i)
+            
+            End If
+        
         Next i
     
     End With
@@ -345,33 +503,54 @@ Private Sub 分出标准件非标件()
     Quyu = ""
     
     For i = 2 To enda
+        
         mbmc = Range("B" & i)
+        
         '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
         If Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                If Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                        Range("E" & i) = "生产清单中没有"
-                Else
-                        Range("E" & i) = "标准件"
-                    End If
+            
+            If Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                
+                Range("E" & i) = "生产清单中没有"
+            
+            Else
+                
+                Range("E" & i) = "标准件"
+                
+            End If
+        
         Else
-                hangshu = Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
-                arr = Sheets("设计非标件清单").Range("D" & hangshu & ":F" & hangshu)
-                Range("F" & i).Resize(1, 3) = arr
+            
+            hangshu = Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+            
+            arr = Sheets("设计非标件清单").Range("D" & hangshu & ":F" & hangshu)
+            
+            Range("F" & i).Resize(1, 3) = arr
             Range("I" & i) = Sheets("设计非标件清单").Range("J" & hangshu)
             Range("J" & i) = Sheets("设计非标件清单").Range("B" & hangshu)
             Range("K" & i) = Sheets("设计非标件清单").Range("L" & hangshu)
             Range("L" & i) = Sheets("设计非标件清单").Range("M" & hangshu)
             Range("M" & i) = Sheets("设计非标件清单").Range("N" & hangshu)
-            End If
+            
+        End If
+        
         If Len(Range("E" & i)) = 0 Then
+        
             If Range("D" & i) = Quyu Then
-                    k = k + 1
-                    Else
-                    k = 1
-                End If
-                Range("E" & i) = Range("D" & i) & "-" & k
-            Quyu = Range("D" & i).Text
+            
+                k = k + 1
+                
+            Else
+            
+                k = 1
+            
             End If
+            
+            Range("E" & i) = Range("D" & i) & "-" & k
+            Quyu = Range("D" & i).Text
+            
+        End If
+        
     Next
     
 End Sub
@@ -420,18 +599,26 @@ Private Sub 清单差异比对()
         If Sheets("设计打包清单").Range("E" & krd).Value = "生产清单中未找到" Then
     
             cyhangshu = krd
-                Sheets("清单差异比对").Range("A" & krf) = krf - 1
+            
+            Sheets("清单差异比对").Range("A" & krf) = krf - 1
             Sheets("清单差异比对").Range("B" & krf) = Sheets("设计打包清单").Range("B" & cyhangshu)
             Sheets("清单差异比对").Range("C" & krf) = Sheets("设计打包清单").Range("C" & cyhangshu)
             Sheets("清单差异比对").Range("D" & krf) = 0
             Sheets("清单差异比对").Range("E" & krf) = "打包清单中有 生产清单中没有的模板编号"
+        
             Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 38
-                krf = krf + 1
+            
+            krf = krf + 1
+        
         Else
+        
             dbhzhangshu = krd
+        
             Sheets("清单汇总处理").Range("A" & krj) = Sheets("设计打包清单").Range("B" & dbhzhangshu)
             Sheets("清单汇总处理").Range("B" & krj) = Sheets("设计打包清单").Range("C" & dbhzhangshu)
+        
             krj = krj + 1
+        
         End If
     
     Next krd
@@ -439,26 +626,34 @@ Private Sub 清单差异比对()
     For krd = 2 To Sheets("设计标准件清单").Cells(Rows.Count, 1).End(xlUp).Row
     
         schzhangshu = krd
+        
         Sheets("清单汇总处理").Range("D" & krl) = Sheets("设计标准件清单").Range("C" & schzhangshu)
         Sheets("清单汇总处理").Range("E" & krl) = Sheets("设计标准件清单").Range("H" & schzhangshu)
+        
         krl = krl + 1
     
     Next krd
     
     For krd = 2 To Sheets("设计非标件清单").Cells(Rows.Count, 1).End(xlUp).Row
+        
         schzhangshu = krd
+        
         Sheets("清单汇总处理").Range("D" & krl) = Sheets("设计非标件清单").Range("C" & schzhangshu)
         Sheets("清单汇总处理").Range("E" & krl) = Sheets("设计非标件清单").Range("H" & schzhangshu)
+        
         krl = krl + 1
+        
     Next krd
 
     ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
         "清单汇总处理!R1C1:R" & (krj - 1) & "C2", Version:=xlPivotTableVersion10).CreatePivotTable _
         TableDestination:="清单汇总处理!R1C7", TableName:="打包清单汇总透视表", DefaultVersion:= _
         xlPivotTableVersion10
+        
     Sheets("清单汇总处理").PivotTables("打包清单汇总透视表").AddFields RowFields:=Array("模板编号")
     
     With Sheets("清单汇总处理").PivotTables("打包清单汇总透视表")
+        
         .AddDataField .PivotFields("打包清单支数"), " 数量", xlSum
     
     End With
@@ -467,9 +662,11 @@ Private Sub 清单差异比对()
         "清单汇总处理!R1C4:R" & (krl - 1) & "C5", Version:=xlPivotTableVersion10).CreatePivotTable _
         TableDestination:="清单汇总处理!R1C10", TableName:="生产清单汇总透视表", DefaultVersion:= _
         xlPivotTableVersion10
+        
     Sheets("清单汇总处理").PivotTables("生产清单汇总透视表").AddFields RowFields:=Array("模板编号")
     
     With Sheets("清单汇总处理").PivotTables("生产清单汇总透视表")
+        
         .AddDataField .PivotFields("生产清单支数"), " 数量", xlSum
     
     End With
@@ -479,25 +676,33 @@ Private Sub 清单差异比对()
     mbbh = Sheets("清单汇总处理").Range("J" & krd)
     
     If Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+        
         Sheets("清单差异比对").Range("A" & krf) = krf - 1
         Sheets("清单差异比对").Range("B" & krf) = Sheets("清单汇总处理").Range("J" & krd)
         Sheets("清单差异比对").Range("C" & krf) = 0
         Sheets("清单差异比对").Range("D" & krf) = Sheets("清单汇总处理").Range("K" & krd)
         Sheets("清单差异比对").Range("E" & krf) = "生产清单中有 打包清单中没有的模板编号"
+        
         Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 36
         krf = krf + 1
     
     Else
+        
         hdyhangshu = Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+        
         If Sheets("清单汇总处理").Range("H" & hdyhangshu) <> Sheets("清单汇总处理").Range("K" & krd) Then
+        
             Sheets("清单差异比对").Range("A" & krf) = krf - 1
             Sheets("清单差异比对").Range("B" & krf) = Sheets("清单汇总处理").Range("J" & krd)
             Sheets("清单差异比对").Range("C" & krf) = Sheets("清单汇总处理").Range("H" & hdyhangshu)
             Sheets("清单差异比对").Range("D" & krf) = Sheets("清单汇总处理").Range("K" & krd)
             Sheets("清单差异比对").Range("E" & krf) = "打包清单与生产清单支数不符"
+        
             Sheets("清单差异比对").Range("A" & krf & ":" & "E" & krf).Interior.ColorIndex = 37
             krf = krf + 1
+        
         End If
+        
     End If
     
     Next krd
@@ -531,10 +736,15 @@ Private Sub 打包清单分类()
     rs.Close: Set rs = Nothing
     
     With Sheets("打包分区编号汇总")
+        
         endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        
         For i = 2 To endb
-                .Range("A" & i) = i - 1
+            
+            .Range("A" & i) = i - 1
+        
         Next i
+        
         .Range("A1:G" & endb).Interior.Pattern = xlNone
         .Range("A1:G" & endb).Borders.Weight = 2
         .Columns("A:G").HorizontalAlignment = xlCenter
@@ -567,6 +777,7 @@ Private Sub 打包清单分类()
     title_arr = Array("序号", "模板名称", "模板编号", "数量", "W1", "W2", "L", "图纸编号", "分区编号", "辅助列", "生产单类型")
     
     With Sheets("非标不带配件")
+        
         .Columns("J:J").Cut
         .Columns("B:B").Insert Shift:=xlToRight
         .Columns("A:A").ClearContents
@@ -575,42 +786,62 @@ Private Sub 打包清单分类()
         .Columns("E:E").Delete Shift:=xlToLeft
         .Columns("j:j").Delete Shift:=xlToLeft
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
+        
         endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        
         For i = 2 To endb
-                 If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
-                        If .Range("F" & i) = 100 Then
-                                W2_num = .Range("E" & i)
+             
+            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+                
+                If .Range("F" & i) = 100 Then
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 100
                     .Range("f" & i) = W2_num
-                        ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
-                                W2_num = .Range("E" & i)
+                
+                ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 150
                     .Range("F" & i) = W2_num
-                        Else
-                            W1_num = .Range("E" & i)
+                
+                Else
+                
+                    W1_num = .Range("E" & i)
                     W2_num = .Range("F" & i)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
-                            End If
-                  ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+                    
+                End If
+              
+            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
 
                 If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
-                                W2_num = .Range("E" & i)
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 65
                     .Range("F" & i) = W2_num
-                        Else
-                                W1_num = .Range("E" & i)
+                
+                Else
+                    
+                    W1_num = .Range("E" & i)
                     W2_num = .Range("F" & i)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
-                            End If
-                    End If
-                .Range("A" & i) = i - 1
-           Next i
+                    
+                End If
+                
+            End If
+            
+            .Range("A" & i) = i - 1
+           
+        Next i
+        
     End With
     
     '对现有内容进行排序
     With Sheets("非标不带配件").Sort.SortFields
+        
         .Clear
         .Add Key:=Range("K2"), Order:=1 '生产单类型
         .Add Key:=Range("B2"), Order:=1 '模板名称
@@ -622,13 +853,15 @@ Private Sub 打包清单分类()
     End With
 
     With Sheets("非标不带配件").Sort
+        
         .SetRange Range("b2:L" & endb)
         .Header = 2 '没有标题
         .MatchCase = False
         .Orientation = xlTopToBottom
         .SortMethod = xlPinYin
         .Apply
-     End With
+         
+    End With
     
     k = 0
     
@@ -636,20 +869,35 @@ Private Sub 打包清单分类()
     
         '添加颜色填一个彩云色,希望给我们工作带来好心情,夏天时候可以将余数由0,5,4,3,2,1排列有一种清爽的感觉
         For i = 2 To endb
-                If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
-                If k Mod 6 = 1 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
-                ElseIf k Mod 6 = 2 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
-                ElseIf k Mod 6 = 3 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
-                ElseIf k Mod 6 = 4 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
-                ElseIf k Mod 6 = 5 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
-                ElseIf k Mod 6 = 0 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
-                End If
+            
+            If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
+            
+            If k Mod 6 = 1 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+            
+            ElseIf k Mod 6 = 2 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+            
+            ElseIf k Mod 6 = 3 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+            
+            ElseIf k Mod 6 = 4 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+            
+            ElseIf k Mod 6 = 5 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+            
+            ElseIf k Mod 6 = 0 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+            
+            End If
+        
         Next
     
     End With
@@ -666,6 +914,7 @@ Private Sub 打包清单分类()
     rs.Close: Set rs = Nothing
     
     With Sheets("非标带配件")
+        
         .Columns("K:K").ClearContents
         .Columns("J:J").Cut
         .Columns("B:B").Insert Shift:=xlToRight
@@ -674,42 +923,62 @@ Private Sub 打包清单分类()
         .Columns("K:K").Insert Shift:=xlToRight
         .Columns("E:E").Delete Shift:=xlToLeft
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
+        
         endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        
         For i = 2 To endb
-                 If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
-                        If .Range("F" & i) = 100 Then
-                                W2_num = .Range("E" & i)
+             
+            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+                
+                If .Range("F" & i) = 100 Then
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 100
                     .Range("f" & i) = W2_num
-                        ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
-                                W2_num = .Range("E" & i)
+                
+                ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 150
                     .Range("F" & i) = W2_num
-                        Else
-                            W1_num = .Range("E" & i)
+                
+                Else
+                
+                    W1_num = .Range("E" & i)
                     W2_num = .Range("F" & i)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
-                            End If
-                 ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+                    
+                End If
+             
+            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
 
                 If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
-                                W2_num = .Range("E" & i)
+                    
+                    W2_num = .Range("E" & i)
                     .Range("E" & i) = 65
                     .Range("F" & i) = W2_num
-                        Else
-                            W1_num = .Range("E" & i)
+                
+                Else
+                
+                    W1_num = .Range("E" & i)
                     W2_num = .Range("F" & i)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
-                            End If
+                    
                 End If
-                .Range("A" & i) = i - 1
-            Next i
+            
+            End If
+            
+            .Range("A" & i) = i - 1
+            
+        Next i
+        
     End With
     
      '对现有内容进行排序
     With Sheets("非标带配件").Sort.SortFields
+        
         .Clear
         .Add Key:=Range("B2"), Order:=1 '模板名称
         .Add Key:=Range("E2"), Order:=1 'W1
@@ -720,13 +989,15 @@ Private Sub 打包清单分类()
     End With
 
     With Sheets("非标带配件").Sort
+        
         .SetRange Range("b2:K" & endb)
         .Header = 2 '没有标题
         .MatchCase = False
         .Orientation = xlTopToBottom
         .SortMethod = xlPinYin
         .Apply
-     End With
+         
+    End With
     
     k = 0
     
@@ -735,21 +1006,37 @@ Private Sub 打包清单分类()
         .Range("J1") = "生产单类型"
     
         For i = 2 To endb
+        
             If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
-                If k Mod 6 = 1 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
-                ElseIf k Mod 6 = 2 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
-                ElseIf k Mod 6 = 3 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
-                ElseIf k Mod 6 = 4 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
-                ElseIf k Mod 6 = 5 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
-                ElseIf k Mod 6 = 0 Then
-                        .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
-                End If
-                .Range("J" & i) = "TP"
+            
+            If k Mod 6 = 1 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+            
+            ElseIf k Mod 6 = 2 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+            
+            ElseIf k Mod 6 = 3 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+            
+            ElseIf k Mod 6 = 4 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+            
+            ElseIf k Mod 6 = 5 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+            
+            ElseIf k Mod 6 = 0 Then
+                
+                .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+            
+            End If
+            
+            .Range("J" & i) = "TP"
+        
         Next
     
     End With
@@ -769,12 +1056,14 @@ Private Sub 打包清单分类()
     ActiveWorkbook.ShowPivotTableFieldList = True
     
     With ActiveSheet.PivotTables("数据透视表1").PivotFields("生产单类型")
+        
         .Orientation = xlRowField
         .Position = 1
     
     End With
     
     With ActiveSheet.PivotTables("数据透视表1").PivotFields("模板名称")
+        
         .Orientation = xlRowField
         .Position = 2
     
@@ -816,12 +1105,14 @@ Private Sub 打包清单分类()
     ActiveWorkbook.ShowPivotTableFieldList = True
      
     With ActiveSheet.PivotTables("数据透视表2").PivotFields("生产单类型")
+        
         .Orientation = xlRowField
         .Position = 1
     
     End With
     
     With ActiveSheet.PivotTables("数据透视表2").PivotFields("模板名称")
+        
         .Orientation = xlRowField
         .Position = 2
     
@@ -863,53 +1154,89 @@ Private Sub 拆分到工作簿()
     path = ThisWorkbook.path & "\分配清单"
 
     If Dir(path, vbDirectory) = "" Then
+        
         MkDir path
+        
     End If
     
     Application.DisplayAlerts = False
     
     For Each ws In Worksheets
+        
         If Left(ws.Name, 2) <> "设计" Then
-                Set d = CreateObject("scripting.dictionary")
-                arr = ws.[A1].CurrentRegion
-                ReDim ary(1 To 200000, 1 To UBound(arr, 2))
-                For i = 2 To UBound(arr)
-                        m = m + 1
+            
+            Set d = CreateObject("scripting.dictionary")
+            
+            arr = ws.[A1].CurrentRegion
+            
+            ReDim ary(1 To 200000, 1 To UBound(arr, 2))
+            
+            For i = 2 To UBound(arr)
+                
+                m = m + 1
                 d(arr(i, 10)) = d(arr(i, 10)) & "," & m
-                        For j = 1 To UBound(arr, 2)
-                                ary(m, j) = arr(i, j)
-                        Next
+                
+                For j = 1 To UBound(arr, 2)
+                    
+                    ary(m, j) = arr(i, j)
+                
                 Next
-                k = d.Keys
+            
+            Next
+            
+            k = d.Keys
             t = d.Items
-                brr = [A1].Resize(65536, UBound(arr, 2))
-                For i = 0 To d.Count - 1
-                        m = 1
+            
+            brr = [A1].Resize(65536, UBound(arr, 2))
+            
+            For i = 0 To d.Count - 1
+                
+                m = 1
                 a = Split(t(i), ",")
-                        For j = 1 To UBound(a)
-                                m = m + 1
-                                For l = 1 To UBound(arr, 2)
-                                        brr(m, l) = ary(a(j), l)
-                                    Next
-                                heji = brr(m, 4) + heji
-                        Next
-                        With Workbooks.Add(xlWBATWorksheet)
-                                With .Sheets(1).[A1].Resize(m, UBound(brr, 2))
-                                        .Value = brr
+                
+                For j = 1 To UBound(a)
+                    
+                    m = m + 1
+                    
+                    For l = 1 To UBound(arr, 2)
+                        
+                        brr(m, l) = ary(a(j), l)
+                        
+                    Next
+                    
+                    heji = brr(m, 4) + heji
+                
+                Next
+                
+                With Workbooks.Add(xlWBATWorksheet)
+                    
+                    With .Sheets(1).[A1].Resize(m, UBound(brr, 2))
+                        
+                        .Value = brr
                         .Borders.LineStyle = xlContinuous
                         .EntireColumn.AutoFit
-                                End With
-                                .SaveAs FileName:=ThisWorkbook.path & "\分配清单\" & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    
+                    End With
+                    
+                    .SaveAs FileName:=ThisWorkbook.path & "\分配清单\" & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
                     .Close
-                                heji = 0
-                        End With
-                Next
-                Set d = Nothing
-                m = 0
-                Erase arr
+                    
+                    heji = 0
+                
+                End With
+            
+            Next
+            
+            Set d = Nothing
+            
+            m = 0
+            
+            Erase arr
             Erase brr
-                Set k = Nothing
+            
+            Set k = Nothing
             Set t = Nothing
+        
         End If
     
     Next
@@ -979,6 +1306,7 @@ Sub saveHbqd()
     Set wb = Workbooks.Open(filename)
     
    ' 暂时只复制3个表，其他的貌似不需要
+   Application.DisplayAlerts = False
     If isSheetExist(wb, "设计非标件清单") Then
         wb.Sheets("设计非标件清单").Delete
     End If
@@ -996,4 +1324,5 @@ Sub saveHbqd()
     End If
     wb.Sheets.Add().Name = "设计打包清单"
     Call copySheet(thisWb.Sheets("设计打包清单"), wb.Sheets("设计打包清单"))
+    Application.DisplayAlerts = True
 End Sub
