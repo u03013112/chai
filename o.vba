@@ -31,12 +31,14 @@ Sub A合并拆分非标件清单()
         qdcyFilename = strfile & wjj_name & "\" & wjj_name & "-清单差异.xlsx"
         fpqdDirname = strfile & wjj_name & "\分配清单\"
 
-        If fileIsExist(hbqdFilename) Then
+        If fileIsExist(hbqdFilename) or fileIsExist(dbfqhzFilename) or fileIsExist(qdcyFilename) or Dir(fpqdDirname, vbDirectory) <> "" Then
             ' TODO 询问是否要清除重来
             Dim result
             result = MsgBox("合并清单已存在，是否删除重做？",4,"选择否将中断拆图")
             If result = vbNo Then Exit Sub
-            Kill hbqdFilename
+            If fileIsExist(hbqdFilename) Then
+                Kill hbqdFilename
+            End If
             If fileIsExist(dbfqhzFilename) Then
                 Kill dbfqhzFilename
             End If
@@ -48,7 +50,7 @@ Sub A合并拆分非标件清单()
                 CreateObject("scripting.filesystemobject").getfolder(fpqdDirname).Delete True
             End If            
         End If
-        Call createExcel(FileName)
+        ' Call createExcel(hbqdFilename)
 
         Application.ScreenUpdating = False
         Application.DisplayAlerts = False
@@ -241,8 +243,17 @@ Sub A合并拆分非标件清单()
         
     End If
     
+    If isSheetExist(ThisWorkbook, "非标带配件") Then
+        ThisWorkbook.Sheets("非标带配件").Delete
+    End If
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标带配件"
+    If isSheetExist(ThisWorkbook, "非标不带配件") Then
+        ThisWorkbook.Sheets("非标不带配件").Delete
+    End If
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "非标不带配件"
+    If isSheetExist(ThisWorkbook, "打包分区编号汇总") Then
+        ThisWorkbook.Sheets("打包分区编号汇总").Delete
+    End If
     Sheets.Add(after:=Sheets("设计打包清单")).Name = "打包分区编号汇总"
     
     Sheets("设计标准件清单").Delete
@@ -250,11 +261,11 @@ Sub A合并拆分非标件清单()
     
     Application.DisplayAlerts = True
     
-    Call 打包清单分类
+    Call 打包清单分类(dbfqhzFilename)
     Call 拆分到工作簿(fpqdDirname)
     
     
-    Call saveHbqd(hbqdFilename)
+    Call saveHbqdAndClose(hbqdFilename)
 
     Application.ScreenUpdating = True
     
@@ -752,7 +763,7 @@ Private Sub 清单差异比对()
     
 End Sub
 
-Private Sub 打包清单分类()
+Private Sub 打包清单分类(dbfqhzFilename As String)
 
     Dim cnn As Object, rs As Object
     
@@ -1333,7 +1344,7 @@ Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
     isSheetExist = False
 End Function
 
-Sub saveHbqd(FileName As String)
+Sub saveHbqdAndClose(FileName As String)
     If fileIsExist(FileName) Then
     ' TODO 询问是否要清除重来
     Else
@@ -1374,6 +1385,7 @@ Sub saveHbqd(FileName As String)
     If isSheetExist(ThisWorkbook, "非标带配件") Then
         ThisWorkbook.Sheets("非标带配件").Delete
     End If
+    wb.Close(True)
     Application.DisplayAlerts = True
 End Sub
 
