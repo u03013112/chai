@@ -8,6 +8,22 @@ Option Explicit
 Dim fso As Object, arr(1 To 100, 1 To 1), i
 Dim dg As FileDialog
 
+Sub Log(shtName As String,cellName As String,str As String)
+    Dim needUpdate As Boolean
+    needUpdate = False
+    If Application.ScreenUpdating = False Then
+        needUpdate = True
+    End If
+    
+    If needUpdate Then
+        Application.ScreenUpdating = True
+    End If
+    Sheets(shtName).[cellName] = str
+    If needUpdate Then
+        Application.ScreenUpdating = False
+    End If
+End Sub
+
 Sub A合并拆分非标件清单()
     
     Dim hbqdFilename As String  ' 合并清单文件名
@@ -31,8 +47,11 @@ Sub A合并拆分非标件清单()
         qdcyFilename = strfile & wjj_name & "\" & wjj_name & "-清单差异.xlsx"
         fpqdDirname = strfile & wjj_name & "\分配清单\"
 
+        Call Log("main","D2","已选择目录:" & dg.SelectedItems(1))
+
         If fileIsExist(hbqdFilename) or fileIsExist(dbfqhzFilename) or fileIsExist(qdcyFilename) or Dir(fpqdDirname, vbDirectory) <> "" Then
             ' TODO 询问是否要清除重来
+            Call Log("main","D3","存有旧状态，或已完成文件，需要清理才能继续")
             Dim result
             result = MsgBox("合并清单已存在，是否删除重做？",4,"选择否将中断拆图")
             If result = vbNo Then Exit Sub
@@ -51,8 +70,7 @@ Sub A合并拆分非标件清单()
             End If            
         End If
         ' Call createExcel(hbqdFilename)
-
-        Application.ScreenUpdating = False
+        
         Application.DisplayAlerts = False
         If isSheetExist(ThisWorkbook, "设计非标件清单") Then
             ThisWorkbook.Sheets("设计非标件清单").Delete
@@ -74,12 +92,11 @@ Sub A合并拆分非标件清单()
         Sheets.Add().Name = "设计非标件清单"
         Sheets.Add().Name = "设计标准件清单"
         Sheets.Add().Name = "设计打包清单"
-        ' Sheets("ZXD").Delete
-        ' Sheets("Sheet1").Delete
-        ' Sheets("erp").Delete
-        ' Sheets("计算用表").Delete
+
         Application.DisplayAlerts = True
-        
+
+        Application.ScreenUpdating = False
+        Call Log("main","D3","清理完成")
         ThisWorkbook.Sheets("设计标准件清单").Activate
         
         brr = Array("序号", "模板名称", "模板编号", "W1", "W2", "L", "单件面积", "数量", "总件面积", "图纸编号", "工作表名", "是否带配件")
@@ -96,8 +113,9 @@ Sub A合并拆分非标件清单()
         
         Erase arr()
         i = 0
+        Call Log("main","D4","开始合并设计传递，请稍后")
         合并设计传递 dg.SelectedItems(1)
-        
+        Call Log("main","D4","开始合并设计已完成")
     Else
     
         Exit Sub
@@ -213,11 +231,12 @@ Sub A合并拆分非标件清单()
     ' Sheets("库(待补充)").Delete
     
     Application.DisplayAlerts = True
-    
+    Call Log("main","D5","正在区分标准件非标件，请稍后")
     Call 分出标准件非标件
-    
+    Call Log("main","D5","区分标准件非标件已完成")
+    Call Log("main","D6","正在清单差异比对，请稍后")
     Call 清单差异比对
-    
+    Call Log("main","D6","清单差异比对已完成")
     Application.DisplayAlerts = False
     
     If Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
@@ -260,21 +279,22 @@ Sub A合并拆分非标件清单()
     Sheets("设计非标件清单").Delete
     
     Application.DisplayAlerts = True
-    
+    Call Log("main","D7","正在打包清单分类，请稍后")
     Call 打包清单分类(dbfqhzFilename)
+    Call Log("main","D7","打包清单分类已完成")
+    Call Log("main","D8","正在拆分到工作簿，请稍后")
     Call 拆分到工作簿(fpqdDirname)
-    
+    Call Log("main","D8","拆分到工作簿已完成")
     
     Call saveHbqdAndClose(hbqdFilename)
-
+    Call Log("main","D9","第一步拆分完成")
     Application.ScreenUpdating = True
-    
-    MsgBox "拆分完毕"
+    ' MsgBox "拆分完毕"
     
 End Sub
 
 Private Sub 合并设计传递(MyPath As String)
-
+    
     Dim Folder As Object, SubFolder As Object
     Dim FileCollection As Object, FileName As Object
     
