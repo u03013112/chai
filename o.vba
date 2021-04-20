@@ -10,6 +10,13 @@ Dim dg As FileDialog
 
 Sub A合并拆分非标件清单()
     
+    Dim hbqdFilename As String  ' 合并清单文件名
+    Dim dbfqhzFilename As String    ' 打包分区编号汇总文件名
+    Dim qdcyFilename As String' 清单差异文件名
+    Dim fpqdDirname As String  ' 分配清单目录名
+
+    Dim wjj_name As String  ' 文件夹名？这个有点多余
+    
     '选择标准件及标准件带配件所在文件夹
     Dim strfile As String
     Dim brr
@@ -17,7 +24,32 @@ Sub A合并拆分非标件清单()
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
     
     If dg.Show = -1 Then
-    
+        strfile = dg.InitialFileName
+        wjj_name = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
+        hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsx"
+        dbfqhzFilename = strfile & wjj_name & "\" & wjj_name & "-打包分区编号汇总.xlsx"
+        qdcyFilename = strfile & wjj_name & "\" & wjj_name & "-清单差异.xlsx"
+        fpqdDirname = strfile & wjj_name & "\分配清单\"
+
+        If fileIsExist(hbqdFilename) Then
+            ' TODO 询问是否要清除重来
+            Dim result
+            result = MsgBox("合并清单已存在，是否删除重做？",4,"选择否将中断拆图")
+            If result = vbNo Then Exit Sub
+            Kill hbqdFilename
+            If fileIsExist(dbfqhzFilename) Then
+                Kill dbfqhzFilename
+            End If
+            If fileIsExist(qdcyFilename) Then
+                Kill qdcyFilename
+            End If
+            If Dir(fpqdDirname, vbDirectory) <> "" Then
+                ' RmDir(fpqdDirname)
+                CreateObject("scripting.filesystemobject").getfolder(fpqdDirname).Delete True
+            End If            
+        End If
+        Call createExcel(FileName)
+
         Application.ScreenUpdating = False
         Application.DisplayAlerts = False
         If isSheetExist(ThisWorkbook, "设计非标件清单") Then
@@ -26,9 +58,17 @@ Sub A合并拆分非标件清单()
         If isSheetExist(ThisWorkbook, "设计标准件清单") Then
             ThisWorkbook.Sheets("设计标准件清单").Delete
         End If
+        ' 一下3个表是最终输出用的3个表，如果可以，删掉
         If isSheetExist(ThisWorkbook, "设计打包清单") Then
             ThisWorkbook.Sheets("设计打包清单").Delete
         End If
+        If isSheetExist(ThisWorkbook, "非标不带配件") Then
+            ThisWorkbook.Sheets("非标不带配件").Delete
+        End If
+        If isSheetExist(ThisWorkbook, "非标带配件") Then
+            ThisWorkbook.Sheets("非标带配件").Delete
+        End If
+
         Sheets.Add().Name = "设计非标件清单"
         Sheets.Add().Name = "设计标准件清单"
         Sheets.Add().Name = "设计打包清单"
@@ -49,7 +89,7 @@ Sub A合并拆分非标件清单()
         
         Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
         
-        strfile = dg.InitialFileName
+        
         Set fso = CreateObject("scripting.filesystemobject")
         
         Erase arr()
@@ -62,11 +102,11 @@ Sub A合并拆分非标件清单()
     
     End If
     
-    Dim wjj_name As String
+    
     Dim i_mbmc  As Integer '遍历模板名称的遍历字符
     Dim endb As Integer
     
-    wjj_name = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
+    
     
     With Sheets("设计非标件清单")
         
@@ -185,7 +225,7 @@ Sub A合并拆分非标件清单()
         ThisWorkbook.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
         
         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
-        ActiveWorkbook.SaveAs FileName:=strfile & wjj_name & "\" & wjj_name & "-清单差异", FileFormat:=51
+        ActiveWorkbook.SaveAs FileName:= qdcyFilename, FileFormat:=51
         ActiveWorkbook.Close SaveChanges:=True
         
         ThisWorkbook.Sheets("清单差异比对").Activate
@@ -211,10 +251,9 @@ Sub A合并拆分非标件清单()
     Application.DisplayAlerts = True
     
     Call 打包清单分类
-    Call 拆分到工作簿
+    Call 拆分到工作簿(fpqdDirname)
     
-    Dim hbqdFilename As String
-    hbqdFilename = strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsm"
+    
     Call saveHbqd(hbqdFilename)
 
     Application.ScreenUpdating = True
@@ -763,7 +802,7 @@ Private Sub 打包清单分类()
     ' dbnum = Replace(ThisWorkbook.Name, "合并清单.xlsm", "打包分区编号汇总.xlsx")
     
     ' ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & dbnum
-    ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\打包分区编号汇总.xlsx"
+    ActiveWorkbook.SaveAs FileName:= dbfqhzFilename
     ActiveWorkbook.Close
     
     '先对W1,W2做一下调整
@@ -1148,7 +1187,7 @@ Private Sub 打包清单分类()
     
 End Sub
 
-Private Sub 拆分到工作簿()
+Private Sub 拆分到工作簿(fpqdDirname As String)
 
     Dim ary(), arr, brr, sh As Worksheet, d As Object, k, t, a, i&, j&, m&, l&
     Dim arr1, k1, T1
@@ -1156,7 +1195,7 @@ Private Sub 拆分到工作簿()
     Dim path As String
     Dim ws As Worksheet
 
-    path = ThisWorkbook.path & "\分配清单"
+    path = fpqdDirname
 
     If Dir(path, vbDirectory) = "" Then
         
@@ -1168,7 +1207,7 @@ Private Sub 拆分到工作簿()
     
     For Each ws In Worksheets
         
-        If Left(ws.Name, 2) <> "设计" And (ws.Name <> "Sheet1") And (ws.Name <> "库(待补充)") Then
+        If ws.Name = "非标不带配件" or ws.Name = "非标带配件" Then
             
             Set d = CreateObject("scripting.dictionary")
             
@@ -1223,7 +1262,7 @@ Private Sub 拆分到工作簿()
                     
                     End With
                     
-                    .SaveAs FileName:=ThisWorkbook.path & "\分配清单\" & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    .SaveAs FileName:= path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
                     .Close
                     
                     heji = 0
@@ -1294,10 +1333,7 @@ Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
     isSheetExist = False
 End Function
 
-' Private Sub saveHbqd(filename As String)
 Sub saveHbqd(FileName As String)
-    'Dim filename As String
-    'filename = "C:\Users\u03013112\Documents\new-412-1\a.xlsx"
     If fileIsExist(FileName) Then
     ' TODO 询问是否要清除重来
     Else
@@ -1328,6 +1364,16 @@ Sub saveHbqd(FileName As String)
     End If
     wb.Sheets.Add().Name = "非标带配件"
     Call copySheet(thisWb.Sheets("非标带配件"), wb.Sheets("非标带配件"))
+    ' 把用完的表删掉，之后如果有用再拷贝回来
+    If isSheetExist(ThisWorkbook, "设计打包清单") Then
+        ThisWorkbook.Sheets("设计打包清单").Delete
+    End If
+    If isSheetExist(ThisWorkbook, "非标不带配件") Then
+        ThisWorkbook.Sheets("非标不带配件").Delete
+    End If
+    If isSheetExist(ThisWorkbook, "非标带配件") Then
+        ThisWorkbook.Sheets("非标带配件").Delete
+    End If
     Application.DisplayAlerts = True
 End Sub
 
