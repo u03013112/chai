@@ -27,6 +27,10 @@ Function fileIsExist(fileFullPath As String) As Boolean
   fileIsExist = ret
 End Function
 
+Sub Log(shtName As String, cellName As String, str As String)
+    Sheets(shtName).Range(cellName) = str
+End Sub
+
 Sub chose1()
     Dim fso As Object, arr(1 To 10 ^ 2, 1 To 1), i
     Dim dg As FileDialog
@@ -34,49 +38,62 @@ Sub chose1()
     Dim strfile As String
     Dim brr
     Dim fileFolderName
-    Dim hbqdFilename As String
-    Dim qdcyFilename As String
+
+    Dim outputDir As String
+    Dim hbqdFilename As String  ' 合并清单文件名
+    Dim dbfqhzFilename As String    ' 打包分区编号汇总文件名
+    Dim qdcyFilename As String ' 清单差异文件名
+    Dim fpqdDirname As String  ' 分配清单目录名
+
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
     If dg.Show = -1 Then
         '递归所选目录，找到所有excel文件
         Dim excelFilenames As Variant
-        excelFilenames = getAllFile(dg.SelectedItems(1))
-        [f5] = getArrLen(excelFilenames)
+        excelFilenames = getAllExcelFile(dg.SelectedItems(1))
+        ' [f5] = getArrLen(excelFilenames)
         'TODO 检测找到的文件是否合格
         
+        fpqdDirname = outputDir & "\分配清单\"
         '在本地进行临时处理
-        'TODO 检测是否有临时文件，如果有是否要按照进度仅需处理，或者清理之后重新做
-        
-        'TODO 在本地新建一个目录，用于存储对应的临时文件和结果
+        Call Log("main", "D2", "已选择目录:" & dg.SelectedItems(1))
         fileFolderName = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
-        Dim outputDir As String
-        outputDir = ThisWorkbook.Path & "\" & fileFolderName
-        If dirIsExist(outputDir) = True Then
-            MsgBox (outputDir & " already exist")
-        Else
-            VBA.MkDir (outputDir)
-        End If
-        '提前建立合并清单文件
+        outputDir = ThisWorkbook.path & "\" & fileFolderName
+        
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
-        If fileIsExist(hbqdFilename) Then
-            MsgBox (hbqdFilename & " already exist")
-        Else
-            createExcel (hbqdFilename)
+        dbfqhzFilename = outputDir & "\" & fileFolderName & "-打包分区编号汇总.xlsx"
+        qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
+        If dirIsExist(outputDir) = True Then
+            Dim result
+            Call Log("main", "D3", "存有旧状态，或已完成文件，需要清理才能继续")
+            result = MsgBox("检测到有同名项目已存在，是否删除重做？", 4, "选择否将中断拆图")
+            If result = vbNo Then Exit Sub
+            
+            CreateObject("scripting.filesystemobject").GetFolder(outputDir).Delete True
+            ' delDIr (outputDir)
+            Call Log("main", "D4", "清理完成")
         End If
+        
 
+        VBA.MkDir (outputDir)
+        '提前建立合并清单文件
+        createExcel (hbqdFilename)
+        
         Dim hbqdWb As Workbook
         Set hbqdWb = Workbooks.Open(hbqdFilename)
-        'hbqdWb.Windows(1).Visible = False
+        hbqdWb.Windows(1).Visible = False
+        ThisWorkbook.Activate
         Call HbqdStep1(hbqdWb)
-
+        Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件")
         Dim excelFilename As Variant
+        Dim count As Long
+        count = 1
         For Each excelFilename In excelFilenames
             If excelFilename = Empty Then
                 Exit For
             End If
-            ' TODO 可以加入进度显示，做到那个文件了，做到第几个文件了，一共有多少文件
-            '[f5] = excelFilename.Name
+            Call Log("main", "D5", "正在处理第" & count & "个文件：" & excelFilename)
             Call SjqdCopy(CStr(excelFilename), hbqdWb)
+            count = count + 1
         Next
         Call HbqdStep2(hbqdWb)
         qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
@@ -133,7 +150,7 @@ Sub HbqdStep2(wb As Workbook)
     Dim endb As Integer
     Dim i_mbmc  As Integer '遍历模板名称的遍历字符
     With wb.Sheets("设计非标件清单")
-        endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        endb = .Cells(Rows.count, 2).End(xlUp).Row
         .Columns("B:B").Replace "平板", "平面板"
         .Columns("B:B").Replace "转角C槽", "转角"
         '模板名称是C槽,模板编号带N 则将模板名称改为转角
@@ -180,10 +197,9 @@ End Sub
 
 Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
     Call StdOrNoStd(wb)
-    MsgBox ("StdOrNoStd ok")
     Call QdDiff(wb)
     Application.DisplayAlerts = False
-    If wb.Sheets("清单差异比对").Cells(Rows.Count, 1).End(xlUp).Row > 1 Then
+    If wb.Sheets("清单差异比对").Cells(Rows.count, 1).End(xlUp).Row > 1 Then
         wb.Sheets("清单汇总处理").Delete
         wb.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
@@ -215,7 +231,7 @@ Sub createExcel(fileFullPath As String)
     excelApp.Quit
 End Sub
 
-Private Function getAllFile(MyPath As String) As Variant
+Private Function getAllExcelFile(MyPath As String) As Variant
     Dim arr(1 To 300)
     Dim arrTmp As Variant
     Dim i As Long
@@ -236,7 +252,7 @@ Private Function getAllFile(MyPath As String) As Variant
         End If
     Next
     For Each SubFolder In Folder.SubFolders
-        arrTmp = getAllFile(SubFolder.Path) '递归
+        arrTmp = getAllExcelFile(SubFolder.path) '递归
         For Each filename In arrTmp
             If filename = Empty Then
                 Exit For
@@ -245,7 +261,7 @@ Private Function getAllFile(MyPath As String) As Variant
             i = i + 1
         Next
     Next
-    getAllFile = arr
+    getAllExcelFile = arr
 End Function
 
 Private Function getArrLen(arr As Variant) As Long
@@ -260,6 +276,25 @@ Private Function getArrLen(arr As Variant) As Long
         i = i + 1
     Next
     getArrLen = i
+End Function
+
+Private Function delDIr(MyPath As String)
+    Dim Folder As Object, SubFolder As Object
+    Dim FileCollection As Object
+    Dim filename As Variant
+    Dim fso As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set Folder = fso.GetFolder(MyPath)
+    Set FileCollection = Folder.Files
+    
+    For Each filename In FileCollection
+        Kill filename
+    Next
+    For Each SubFolder In Folder.SubFolders
+        delDIr (SubFolder.path) '递归
+        RmDir SubFolder.path
+    Next
 End Function
 
 '设计清单复制 ：沿用了旧名字，不明白意义，不改名
@@ -331,7 +366,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
         start_row = 9
     End If
     
-    For k = 1 To wb.Worksheets.Count
+    For k = 1 To wb.Worksheets.count
         If InStr(wb.FullName, "打包") = 0 Then
             '根据"数量"所在的位置调整行或者列
             czgzbm = wb.Worksheets(k).Name
@@ -354,16 +389,16 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
             gzbm = .Replace(gzbm, "") '从工作表名称获取是A区还是B区
         End With
         
-        irow = wbTarget.Sheets(Target_Sheet).UsedRange.Rows.Count + 1 '获取已使用区域非空的下一行
-        endb = wb.Sheets(k).Cells(wb.Sheets(k).Rows.Count, 2).End(xlUp).Row '
-        enda = wb.Sheets(k).Cells(wb.Sheets(k).Rows.Count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
+        irow = wbTarget.Sheets(Target_Sheet).UsedRange.Rows.count + 1 '获取已使用区域非空的下一行
+        endb = wb.Sheets(k).Cells(wb.Sheets(k).Rows.count, 2).End(xlUp).Row '
+        enda = wb.Sheets(k).Cells(wb.Sheets(k).Rows.count, 1).End(xlUp).Row '两侧检测以免数量列的最后一行不是非空单元格
         
         If endb - enda > 2 Then
             endb = enda - 1
         End If
         
         arra = wb.Sheets(k).Range("A" & start_row & ":J" & endb)  '设计清单标题是8行,合并从第9行开始
-        endthisa = wbTarget.Worksheets(Target_Sheet).Cells(Rows.Count, 1).End(xlUp).Row
+        endthisa = wbTarget.Worksheets(Target_Sheet).Cells(Rows.count, 1).End(xlUp).Row
         wbTarget.Worksheets(Target_Sheet).Range("a" & endthisa + 1).Resize(UBound(arra), 10) = arra
         
         If Len(gzbm) > 0 Then
@@ -414,7 +449,7 @@ Private Sub StdOrNoStd(wb As Workbook)
     Dim endb As Integer
     '提取图纸编号的辅助列,即去掉前缀以后的部分
     With wb.Sheets("设计非标件清单")
-        endb = .Cells(Rows.Count, 2).End(xlUp).Row
+        endb = .Cells(Rows.count, 2).End(xlUp).Row
         For i = 2 To endb
             If Mid(.Range("C" & i), 2, 1) = "-" Then
                 .Range("m" & i) = Mid(.Range("C" & i), 3, Len(.Range("C" & i)))
@@ -428,12 +463,10 @@ Private Sub StdOrNoStd(wb As Workbook)
     End With
     MsgBox ("StdOrNoStd 1 ok")
     
-    Dim sjfbqd As Worksheet
-    Set sjfbqd = wb.Sheets("设计非标件清单")
     With wb.Sheets("设计打包清单")
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
         .[a1].Resize(1, UBound(brr) + 1) = brr
-        enda = .Cells(Rows.Count, 1).End(xlUp).Row
+        enda = .Cells(Rows.count, 1).End(xlUp).Row
         enda = 500
         Quyu = ""
         
@@ -443,8 +476,8 @@ Private Sub StdOrNoStd(wb As Workbook)
             
             mbmc = .Range("B" & i)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
-            If sjfbqd.Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                If sjfbqd.Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+            If wb.Sheets("设计非标件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+                If wb.Sheets("设计标准件清单").Columns(3).Find(mbmc, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                     .Range("E" & i) = "生产清单中没有"
                 Else
                     .Range("E" & i) = "标准件"
@@ -505,7 +538,7 @@ Private Sub QdDiff(wb As Workbook)
     wb.Sheets("清单汇总处理").[a1].Resize(1, UBound(srr) + 1) = srr
     wb.Sheets("清单差异比对").Cells(2, 1).Select
     ActiveWindow.FreezePanes = True
-    For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.Count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.count, 1).End(xlUp).Row
         If wb.Sheets("设计打包清单").Range("E" & krd).Value = "生产清单中未找到" Then
             cyhangshu = krd
             wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
@@ -522,13 +555,13 @@ Private Sub QdDiff(wb As Workbook)
             krj = krj + 1
         End If
     Next krd
-    For krd = 2 To wb.Sheets("设计标准件清单").Cells(Rows.Count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计标准件清单").Cells(Rows.count, 1).End(xlUp).Row
         schzhangshu = krd
         wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计标准件清单").Range("C" & schzhangshu)
         wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计标准件清单").Range("H" & schzhangshu)
         krl = krl + 1
     Next krd
-    For krd = 2 To wb.Sheets("设计非标件清单").Cells(Rows.Count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计非标件清单").Cells(Rows.count, 1).End(xlUp).Row
         schzhangshu = krd
         wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计非标件清单").Range("C" & schzhangshu)
         wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计非标件清单").Range("H" & schzhangshu)
@@ -551,7 +584,7 @@ Private Sub QdDiff(wb As Workbook)
     With wb.Sheets("清单汇总处理").PivotTables("生产清单汇总透视表")
         .AddDataField .PivotFields("生产清单支数"), " 数量", xlSum
     End With
-    For krd = 3 To wb.Sheets("清单汇总处理").Cells(Rows.Count, 10).End(xlUp).Row - 1
+    For krd = 3 To wb.Sheets("清单汇总处理").Cells(Rows.count, 10).End(xlUp).Row - 1
         mbbh = wb.Sheets("清单汇总处理").Range("J" & krd)
         If wb.Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
             wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
@@ -575,6 +608,10 @@ Private Sub QdDiff(wb As Workbook)
         End If
     Next krd
 End Sub
+
+
+
+
 
 
 
