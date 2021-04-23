@@ -154,7 +154,7 @@ Sub HbqdStep2(hbqdFilename As String)
     Dim endb As Integer
     Dim i_mbmc  As Integer '遍历模板名称的遍历字符
     With wb.Sheets("设计非标件清单")
-        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        endb = .Cells(65535, 2).End(xlUp).Row
         .Columns("B:B").Replace "平板", "平面板"
         .Columns("B:B").Replace "转角C槽", "转角"
         '模板名称是C槽,模板编号带N 则将模板名称改为转角
@@ -234,7 +234,7 @@ Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
     Application.ScreenUpdating = False
     Call QdDiff(wb)
     Application.DisplayAlerts = False
-    If wb.Sheets("清单差异比对").Cells(Rows.count, 1).End(xlUp).Row > 1 Then
+    If wb.Sheets("清单差异比对").Cells(65535, 1).End(xlUp).Row > 1 Then
         wb.Sheets("清单汇总处理").Delete
         wb.Worksheets("清单差异比对").Columns("A:E").EntireColumn.AutoFit
         Worksheets(Array("设计打包清单", "设计标准件清单", "设计非标件清单", "清单差异比对")).Copy
@@ -435,7 +435,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
         End If
         
         arra = wb.Sheets(k).Range("A" & start_row & ":J" & endb)  '设计清单标题是8行,合并从第9行开始
-        endthisa = wbTarget.Worksheets(Target_Sheet).Cells(Rows.count, 1).End(xlUp).Row
+        endthisa = wbTarget.Worksheets(Target_Sheet).Cells(65535, 1).End(xlUp).Row
         wbTarget.Worksheets(Target_Sheet).Range("a" & endthisa + 1).Resize(UBound(arra), 10) = arra
         
         If Len(gzbm) > 0 Then
@@ -476,7 +476,7 @@ Private Sub StdOrNoStd(wb As Workbook)
     Dim endb As Integer
     '提取图纸编号的辅助列,即去掉前缀以后的部分
     With wb.Sheets("设计非标件清单")
-        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        endb = .Cells(65535, 2).End(xlUp).Row
         For i = 2 To endb
             If Mid(.Range("C" & i), 2, 1) = "-" Then
                 .Range("m" & i) = Mid(.Range("C" & i), 3, Len(.Range("C" & i)))
@@ -492,7 +492,7 @@ Private Sub StdOrNoStd(wb As Workbook)
     With wb.Sheets("设计打包清单")
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
         .[A1].Resize(1, UBound(brr) + 1) = brr
-        enda = .Cells(Rows.count, 1).End(xlUp).Row
+        enda = .Cells(65535, 1).End(xlUp).Row
         Quyu = ""
         Call Log("main", "D8", "共发现零件:" & enda - 1 & "种")
         For i = 2 To enda
@@ -567,7 +567,7 @@ Private Sub QdDiff(wb As Workbook)
     wb.Sheets("清单汇总处理").[A1].Resize(1, UBound(srr) + 1) = srr
     wb.Sheets("清单差异比对").Cells(2, 1).Select
     ActiveWindow.FreezePanes = True
-    For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
         If wb.Sheets("设计打包清单").Range("E" & krd).Value = "生产清单中未找到" Then
             cyhangshu = krd
             wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
@@ -584,13 +584,13 @@ Private Sub QdDiff(wb As Workbook)
             krj = krj + 1
         End If
     Next krd
-    For krd = 2 To wb.Sheets("设计标准件清单").Cells(Rows.count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计标准件清单").Cells(65535, 1).End(xlUp).Row
         schzhangshu = krd
         wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计标准件清单").Range("C" & schzhangshu)
         wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计标准件清单").Range("H" & schzhangshu)
         krl = krl + 1
     Next krd
-    For krd = 2 To wb.Sheets("设计非标件清单").Cells(Rows.count, 1).End(xlUp).Row
+    For krd = 2 To wb.Sheets("设计非标件清单").Cells(65535, 1).End(xlUp).Row
         schzhangshu = krd
         wb.Sheets("清单汇总处理").Range("D" & krl) = wb.Sheets("设计非标件清单").Range("C" & schzhangshu)
         wb.Sheets("清单汇总处理").Range("E" & krl) = wb.Sheets("设计非标件清单").Range("H" & schzhangshu)
@@ -615,7 +615,7 @@ Private Sub QdDiff(wb As Workbook)
     With wb.Sheets("清单汇总处理").PivotTables("生产清单汇总透视表")
         .AddDataField .PivotFields("生产清单支数"), " 数量", xlSum
     End With
-    For krd = 3 To wb.Sheets("清单汇总处理").Cells(Rows.count, 10).End(xlUp).Row - 1
+    For krd = 3 To wb.Sheets("清单汇总处理").Cells(65535, 10).End(xlUp).Row - 1
         mbbh = wb.Sheets("清单汇总处理").Range("J" & krd)
         If wb.Sheets("清单汇总处理").Columns(7).Find(mbbh, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
             wb.Sheets("清单差异比对").Range("A" & krf) = krf - 1
@@ -678,16 +678,30 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Dim i As Integer
     Dim endb As Integer
     Dim k As Integer
-    cnn.Open "provider=Microsoft.ACE.OLEDB.12.0;extended properties='excel 12.0 Macro;hdr=yes';data source=" & wb.FullName
+    ' cnn.Open "provider=Microsoft.ACE.OLEDB.12.0;extended properties='excel 12.0 Macro;hdr=yes';data source=" & wb.FullName
 
-    SQL = "select 模板名称,数量,打包表名,分区编号,是否带配件 from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有' "
-    Set rs = cnn.Execute(SQL)
-    wb.Sheets("打包分区编号汇总").Range("B2").CopyFromRecordset rs
+    ' SQL = "select 模板名称,数量,打包表名,分区编号,是否带配件 from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有' "
+    ' Set rs = cnn.Execute(SQL)
+    ' wb.Sheets("打包分区编号汇总").Range("B2").CopyFromRecordset rs
+    Dim c1 As Long
+    Dim c2 As Long
+    endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
+    c2 = 2
+    For c1 = 2 To endb
+        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" Then
+            wb.Sheets("打包分区编号汇总").Range("B"&c2) = wb.Sheets("设计打包清单").Range("B"&c1).Value
+            wb.Sheets("打包分区编号汇总").Range("C"&c2) = wb.Sheets("设计打包清单").Range("C"&c1).Value
+            wb.Sheets("打包分区编号汇总").Range("D"&c2) = wb.Sheets("设计打包清单").Range("D"&c1).Value
+            wb.Sheets("打包分区编号汇总").Range("E"&c2) = wb.Sheets("设计打包清单").Range("E"&c1).Value
+            wb.Sheets("打包分区编号汇总").Range("K"&c2) = wb.Sheets("设计打包清单").Range("K"&c1).Value
+        End If
+    Next c1
+
     title_arr = Array("序号", "模板编号", "数量", "打包表名", "分区编号", "是否带配件", "备注")
     wb.Sheets("打包分区编号汇总").[A1].Resize(1, UBound(title_arr) + 1) = title_arr
     rs.Close: Set rs = Nothing
     With wb.Sheets("打包分区编号汇总")
-            endb = .Cells(Rows.count, 2).End(xlUp).Row
+            endb = .Cells(65535, 2).End(xlUp).Row
             For i = 2 To endb
                 .Range("A" & i) = i - 1
             Next i
@@ -735,7 +749,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         .Columns("E:E").Delete Shift:=xlToLeft
         .Columns("j:j").Delete Shift:=xlToLeft
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
-        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        endb = .Cells(65535, 2).End(xlUp).Row
         For i = 2 To endb
             If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
                 If .Range("F" & i) = 100 Then
@@ -822,7 +836,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         .Columns("K:K").Insert Shift:=xlToRight
         .Columns("E:E").Delete Shift:=xlToLeft
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
-        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        endb = .Cells(65535, 2).End(xlUp).Row
         For i = 2 To endb
             If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
                 If .Range("F" & i) = 100 Then
@@ -920,12 +934,11 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("生产单类型").Subtotals = Array(False, _
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标不带配件").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
-    'wb.Sheets("非标不带配件").Columns("O:Q") = wb.Sheets("非标不带配件").Columns("O:Q").Value
     wb.Sheets("非标不带配件").Columns("R:T") = wb.Sheets("非标不带配件").Columns("O:Q").Value
-    'wb.Sheets("非标不带配件").Columns("O:Q") = wb.Sheets("非标不带配件").Columns("R:T").Value
+    ' 这里由于不能覆盖写入，原有的O列改为R列
     Dim end_O As Integer
-    end_O = wb.Sheets("非标不带配件").Cells(65535, 15).End(xlUp).Row - 1
-    wb.Sheets("非标不带配件").Range("O" & end_O & ": Q" & end_O).ClearContents
+    end_O = wb.Sheets("非标不带配件").Cells(65535, 18).End(xlUp).Row - 1
+    wb.Sheets("非标不带配件").Range("R" & end_O & ": T" & end_O).ClearContents
 
     ' wb.Sheets("非标带配件").Activate
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -952,7 +965,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("生产单类型").Subtotals = Array(False, _
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").RepeatAllLabels xlRepeatLabels
-    wb.Sheets("非标带配件").Columns("O:Q") = wb.Sheets("非标带配件").Columns("O:Q").Value
+    wb.Sheets("非标带配件").Columns("R:T") = wb.Sheets("非标带配件").Columns("O:Q").Value
     end_O = wb.Sheets("非标带配件").Cells(65535, 15).End(xlUp).Row - 1
     wb.Sheets("非标带配件").Range("O" & end_O & ": Q" & end_O).ClearContents
     
