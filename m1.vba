@@ -490,7 +490,6 @@ Private Sub StdOrNoStd(wb As Workbook)
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
         .[a1].Resize(1, UBound(brr) + 1) = brr
         enda = .Cells(Rows.count, 1).End(xlUp).Row
-        enda = 500
         Quyu = ""
         Call Log("main", "D8", "共发现零件:" & enda-1 & "种")
         For i = 2 To enda
