@@ -91,15 +91,19 @@ Sub chose1()
             If excelFilename = Empty Then
                 Exit For
             End If
-            Call Log("main", "D5", "正在处理第" & count & "个文件：" & excelFilename)
+            Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename)
+            Application.ScreenUpdating = False
             Call SjqdCopy(CStr(excelFilename), hbqdWb)
+            Application.ScreenUpdating = True
             count = count + 1
         Next
         Call HbqdStep2(hbqdWb)
-        qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
-        Call HbqdStep3(hbqdWb, qdcyFilename)
-
+        ' TODO:这里露底
+        hbqdWb.Windows(1).Visible = True
         hbqdWb.Close (True)
+        Exit Sub
+        ' 在这里做一个分割，不再连续做
+        Call HbqdStep3(hbqdFilename, qdcyFilename)
         Exit Sub
     Else
         Exit Sub
@@ -195,7 +199,11 @@ Sub HbqdStep2(wb As Workbook)
     End With
 End Sub
 
-Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
+Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(hbqdFilename)
+    wb.Windows(1).Visible = False
+
     Call StdOrNoStd(wb)
     Call QdDiff(wb)
     Application.DisplayAlerts = False
@@ -218,6 +226,7 @@ Sub HbqdStep3(wb As Workbook, qdcyFilename As String)
     'wb.Sheets("设计标准件清单").Delete
     'wb.Sheets("设计非标件清单").Delete
     Application.DisplayAlerts = True
+    wb.Close (True)
 End Sub
 
 Sub createExcel(fileFullPath As String)
@@ -320,7 +329,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     Dim czgzbm '记录工作表名
     
     Set wb = Workbooks.Open(filename) '打开表格
-    'wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = False
     wb_name = Split(wb.FullName, "\")(UBound(Split(wb.FullName, "\")))
     '区域附加
     If InStr(wb_name, "孔") = 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
@@ -461,7 +470,6 @@ Private Sub StdOrNoStd(wb As Workbook)
         .Range("N2").FormulaR1C1 = "=VLOOKUP(RC[-12],C[1]:C[2],2,0)"
         .Range("N2").AutoFill Destination:=.Range("N2:N" & endb)
     End With
-    MsgBox ("StdOrNoStd 1 ok")
     
     With wb.Sheets("设计打包清单")
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
@@ -503,7 +511,6 @@ Private Sub StdOrNoStd(wb As Workbook)
             End If
         Next i
     End With
-    MsgBox ("StdOrNoStd 2 ok")
 End Sub
 
 ' 清单差异比对：沿用了旧名字，不明白意义，不改名
@@ -608,6 +615,8 @@ Private Sub QdDiff(wb As Workbook)
         End If
     Next krd
 End Sub
+
+
 
 
 
