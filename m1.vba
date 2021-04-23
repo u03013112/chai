@@ -56,7 +56,7 @@ Sub chose1()
         excelFilenames = getAllExcelFile(dg.SelectedItems(1))
         ' [f5] = getArrLen(excelFilenames)
         'TODO 检测找到的文件是否合格
-        
+
         fpqdDirname = outputDir & "\分配清单\"
         '在本地进行临时处理
         Call Log("main", "D2", "已选择目录:" & dg.SelectedItems(1))
@@ -86,9 +86,11 @@ Sub chose1()
         hbqdWb.Windows(1).Visible = False
         ThisWorkbook.Activate
         ' 拆分步骤，每一步都相对独立
-        Call HbqdStep1(hbqdFilename,excelFilenames)
+        Call HbqdStep1(hbqdFilename, excelFilenames)
         Call HbqdStep2(hbqdFilename)
         Call HbqdStep3(hbqdFilename, qdcyFilename)
+
+        Call Dbqdfl(hbqdFilename, dbfqhzFilename)
         Exit Sub
     Else
         Exit Sub
@@ -104,7 +106,7 @@ Sub chose1()
     MsgBox "拆分完毕"
 End Sub
 
-Sub HbqdStep1(hbqdFilename As String,excelFilenames As Variant)        
+Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = False
@@ -118,11 +120,11 @@ Sub HbqdStep1(hbqdFilename As String,excelFilenames As Variant)
          
     Dim brr
     brr = Array("序号", "模板名称", "模板编号", "W1", "W2", "L", "单件面积", "数量", "总件面积", "图纸编号", "工作表名", "是否带配件")
-    wb.Sheets("设计标准件清单").[a1].Resize(1, UBound(brr) + 1) = brr
-    wb.Sheets("设计非标件清单").[a1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计标准件清单").[A1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计非标件清单").[A1].Resize(1, UBound(brr) + 1) = brr
         
     brr = Array("序号", "模板名称", "数量", "打包表名")
-    wb.Sheets("设计打包清单").[a1].Resize(1, UBound(brr) + 1) = brr
+    wb.Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
 
     Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件")
     Dim excelFilename As Variant
@@ -203,9 +205,18 @@ Sub HbqdStep3Test()
     Dim hbqdFilename As String
     Dim qdcyFilename As String
     hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
-    qdcyFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1--清单差异.xlsx"
+    qdcyFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-清单差异.xlsx"
 
-    Call HbqdStep3(hbqdFilename,qdcyFilename)
+    Call HbqdStep3(hbqdFilename, qdcyFilename)
+End Sub
+
+Sub HbqdStep4Test()
+    Dim hbqdFilename As String
+    Dim dbfqhzFilename As String
+    hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
+    dbfqhzFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-打包分区编号汇总.xlsx"
+
+    Call Dbqdfl(hbqdFilename, dbfqhzFilename)
 End Sub
 
 ' TODO: 完全不再使用透视表，使用Dict替代透视表
@@ -480,12 +491,12 @@ Private Sub StdOrNoStd(wb As Workbook)
     
     With wb.Sheets("设计打包清单")
         brr = Array("序号", "模板名称", "数量", "打包表名", "分区编号", "W1", "W2", "L", "非标图纸编号", "图纸类别", "是否带配件", "辅助列", "生产单类型")
-        .[a1].Resize(1, UBound(brr) + 1) = brr
+        .[A1].Resize(1, UBound(brr) + 1) = brr
         enda = .Cells(Rows.count, 1).End(xlUp).Row
         Quyu = ""
-        Call Log("main", "D8", "共发现零件:" & enda-1 & "种")
+        Call Log("main", "D8", "共发现零件:" & enda - 1 & "种")
         For i = 2 To enda
-            Call Log("main", "D9", "已完成:" & i-1)
+            Call Log("main", "D9", "已完成:" & i - 1)
             
             mbmc = .Range("B" & i)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
@@ -551,9 +562,9 @@ Private Sub QdDiff(wb As Workbook)
 
     Dim srr
     srr = Array("序号", "模板编号", "打包清单支数", "生产清单支数", "备注")
-    wb.Sheets("清单差异比对").[a1].Resize(1, UBound(srr) + 1) = srr
+    wb.Sheets("清单差异比对").[A1].Resize(1, UBound(srr) + 1) = srr
     srr = Array("模板编号", "打包清单支数", "", "模板编号", "生产清单支数")
-    wb.Sheets("清单汇总处理").[a1].Resize(1, UBound(srr) + 1) = srr
+    wb.Sheets("清单汇总处理").[A1].Resize(1, UBound(srr) + 1) = srr
     wb.Sheets("清单差异比对").Cells(2, 1).Select
     ActiveWindow.FreezePanes = True
     For krd = 2 To wb.Sheets("设计打包清单").Cells(Rows.count, 1).End(xlUp).Row
@@ -629,6 +640,17 @@ Private Sub QdDiff(wb As Workbook)
     Next krd
 End Sub
 
+Private Sub copySheet(src As Worksheet, dst As Worksheet)
+    Dim ur As Range
+    Dim rowCount As Long
+    Dim ColumnCount As Long
+    Set ur = src.UsedRange
+    ColumnCount = ur.Columns.count
+    rowCount = ur.Rows.count
+
+    dst.[A1].Resize(rowCount, ColumnCount) = src.UsedRange.Value
+End Sub
+
 Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
     Dim sht As Worksheet
     For Each sht In wb.Sheets
@@ -639,3 +661,300 @@ Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
     Next
     isSheetExist = False
 End Function
+
+' 打包清单分类 ：沿用了旧名字，不明白意义，不改名
+Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(hbqdFilename)
+    wb.Windows(1).Visible = False
+    ThisWorkbook.Activate
+
+    Dim cnn As Object, rs As Object
+    Set cnn = CreateObject("adodb.connection")
+    Set rs = CreateObject("adodb.recordset")
+    Dim SQL As String
+    Dim a As Long
+    Dim title_arr
+    Dim i As Integer
+    Dim endb As Integer
+    Dim k As Integer
+    cnn.Open "provider=Microsoft.ACE.OLEDB.12.0;extended properties='excel 12.0 Macro;hdr=yes';data source=" & wb.FullName
+
+    SQL = "select 模板名称,数量,打包表名,分区编号,是否带配件 from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有' "
+    Set rs = cnn.Execute(SQL)
+    wb.Sheets("打包分区编号汇总").Range("B2").CopyFromRecordset rs
+    title_arr = Array("序号", "模板编号", "数量", "打包表名", "分区编号", "是否带配件", "备注")
+    wb.Sheets("打包分区编号汇总").[A1].Resize(1, UBound(title_arr) + 1) = title_arr
+    rs.Close: Set rs = Nothing
+    With wb.Sheets("打包分区编号汇总")
+            endb = .Cells(Rows.count, 2).End(xlUp).Row
+            For i = 2 To endb
+                .Range("A" & i) = i - 1
+            Next i
+            .Range("A1:G" & endb).Interior.Pattern = xlNone
+        .Range("A1:G" & endb).Borders.Weight = 2
+        .Columns("A:G").HorizontalAlignment = xlCenter
+        .Columns("B:B").EntireColumn.AutoFit
+    End With
+    ' wb.Sheets("打包分区编号汇总").Move
+    ' Dim dbnum  As String '打包num,即打包分区编号汇总移动出来后新的表格名字
+    ' dbnum = Replace(ThisWorkbook.Name, "合并清单.xlsm", "打包分区编号汇总.xlsx")
+    ' ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & dbnum
+    ' ActiveWorkbook.Close
+
+    If fileIsExist(dbfqhzFilename) Then
+        Kill dbfqhzFilename
+    Else
+        Call createExcel(dbfqhzFilename)
+    End If
+    Dim dbfqhzWb As Workbook
+    Set dbfqhzWb = Workbooks.Open(dbfqhzFilename)
+    dbfqhzWb.Windows(1).Visible = False
+    ThisWorkbook.Activate
+    dbfqhzWb.Sheets.Add().Name = "打包分区编号汇总"
+    Call copySheet(wb.Sheets("打包分区编号汇总"), dbfqhzWb.Sheets("打包分区编号汇总"))
+    ' TODO :可能需要把自带的sheet1删了
+    ' 打包分区编号汇总在wb里已经可以删了
+    dbfqhzWb.Close (True)
+
+    '先对W1,W2做一下调整
+    Dim W1_num As Integer
+    Dim W2_num As Integer
+    wb.Sheets("非标不带配件").Activate
+    SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件 is null order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
+    Set rs = cnn.Execute(SQL)
+    wb.Sheets("非标不带配件").Range("A2").CopyFromRecordset rs
+    rs.Close: Set rs = Nothing
+    title_arr = Array("序号", "模板名称", "模板编号", "数量", "W1", "W2", "L", "图纸编号", "分区编号", "辅助列", "生产单类型")
+    With wb.Sheets("非标不带配件")
+        .Columns("J:J").Cut
+        .Columns("B:B").Insert Shift:=xlToRight
+        .Columns("A:A").ClearContents
+        .Columns("F:F").Cut
+        .Columns("K:K").Insert Shift:=xlToRight
+        .Columns("E:E").Delete Shift:=xlToLeft
+        .Columns("j:j").Delete Shift:=xlToLeft
+        .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
+        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        For i = 2 To endb
+            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+                If .Range("F" & i) = 100 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 100
+                    .Range("f" & i) = W2_num
+                ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 150
+                    .Range("F" & i) = W2_num
+                Else
+                    W1_num = .Range("E" & i)
+                    W2_num = .Range("F" & i)
+                    .Range("E" & i) = W1_num
+                    .Range("F" & i) = W2_num
+                End If
+            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+                If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 65
+                    .Range("F" & i) = W2_num
+                Else
+                    W1_num = .Range("E" & i)
+                    W2_num = .Range("F" & i)
+                    .Range("E" & i) = W1_num
+                    .Range("F" & i) = W2_num
+                End If
+            End If
+            .Range("A" & i) = i - 1
+        Next i
+    End With
+    '对现有内容进行排序
+    With wb.Sheets("非标不带配件").Sort.SortFields
+            .Clear
+        .Add Key:=Range("K2"), Order:=1 '生产单类型
+        .Add Key:=Range("B2"), Order:=1 '模板名称
+        .Add Key:=Range("E2"), Order:=1 'W1
+        .Add Key:=Range("F2"), Order:=1 'W2
+        .Add Key:=Range("H2"), Order:=1 '图纸编号
+        .Add Key:=Range("J2"), Order:=1 '辅助列
+    End With
+
+    With wb.Sheets("非标不带配件").Sort
+            .SetRange Range("b2:L" & endb)
+        .Header = 2 '没有标题
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+         End With
+    k = 0
+    With wb.Sheets("非标不带配件")
+        '添加颜色填一个彩云色,希望给我们工作带来好心情,夏天时候可以将余数由0,5,4,3,2,1排列有一种清爽的感觉
+        For i = 2 To endb
+            If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
+            If k Mod 6 = 1 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+            ElseIf k Mod 6 = 2 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+            ElseIf k Mod 6 = 3 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+            ElseIf k Mod 6 = 4 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+            ElseIf k Mod 6 = 5 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+            ElseIf k Mod 6 = 0 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+            End If
+        Next
+    End With
+    wb.Sheets("非标不带配件").Columns("J:J").Delete Shift:=xlToLeft
+    wb.Sheets("非标带配件").Activate
+
+    SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件='带配件' order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
+    Set rs = cnn.Execute(SQL)
+    wb.Sheets("非标带配件").Range("A2").CopyFromRecordset rs
+    rs.Close: Set rs = Nothing
+    With wb.Sheets("非标带配件")
+        .Columns("K:K").ClearContents
+        .Columns("J:J").Cut
+        .Columns("B:B").Insert Shift:=xlToRight
+        .Columns("A:A").ClearContents
+        .Columns("F:F").Cut
+        .Columns("K:K").Insert Shift:=xlToRight
+        .Columns("E:E").Delete Shift:=xlToLeft
+        .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
+        endb = .Cells(Rows.count, 2).End(xlUp).Row
+        For i = 2 To endb
+            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+                If .Range("F" & i) = 100 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 100
+                    .Range("f" & i) = W2_num
+                ElseIf .Range("F" & i) = 150 And .Range("E" & i) <> 100 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 150
+                    .Range("F" & i) = W2_num
+                Else
+                    W1_num = .Range("E" & i)
+                    W2_num = .Range("F" & i)
+                    .Range("E" & i) = W1_num
+                    .Range("F" & i) = W2_num
+                End If
+            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+                If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
+                    W2_num = .Range("E" & i)
+                    .Range("E" & i) = 65
+                    .Range("F" & i) = W2_num
+                Else
+                    W1_num = .Range("E" & i)
+                    W2_num = .Range("F" & i)
+                    .Range("E" & i) = W1_num
+                    .Range("F" & i) = W2_num
+                End If
+            End If
+            .Range("A" & i) = i - 1
+        Next i
+    End With
+     '对现有内容进行排序
+    With wb.Sheets("非标带配件").Sort.SortFields
+        .Clear
+        .Add Key:=Range("B2"), Order:=1 '模板名称
+        .Add Key:=Range("E2"), Order:=1 'W1
+        .Add Key:=Range("F2"), Order:=1 'W2
+        .Add Key:=Range("H2"), Order:=1 '辅助列
+        .Add Key:=Range("K2"), Order:=1 '辅助列
+    End With
+
+    With wb.Sheets("非标带配件").Sort
+        .SetRange Range("b2:K" & endb)
+        .Header = 2 '没有标题
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    k = 0
+    With wb.Sheets("非标带配件")
+        .Range("J1") = "生产单类型"
+        For i = 2 To endb
+            If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
+            If k Mod 6 = 1 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+            ElseIf k Mod 6 = 2 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+            ElseIf k Mod 6 = 3 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+            ElseIf k Mod 6 = 4 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+            ElseIf k Mod 6 = 5 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+            ElseIf k Mod 6 = 0 Then
+                    .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+            End If
+            .Range("J" & i) = "TP"
+        Next
+    End With
+    wb.Sheets("非标带配件").Columns("K:L").Delete Shift:=xlToLeft
+    cnn.Close: Set cnn = Nothing
+    '将各种类型的生产单类型及模板名称列出表格
+    ' wb.Sheets("非标不带配件").Activate
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "非标不带配件!R1C2:R1048576C10", Version:=xlPivotTableVersion14).CreatePivotTable TableDestination:= _
+        "非标不带配件!R1C15", TableName:="数据透视表1", DefaultVersion:=xlPivotTableVersion14
+    'wb.Sheets("非标不带配件").Cells(1, 15).Select
+    wb.ShowPivotTableFieldList = True
+    With wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("生产单类型")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("模板名称")
+        .Orientation = xlRowField
+        .Position = 2
+    End With
+    wb.Sheets("非标不带配件").PivotTables("数据透视表1").AddDataField wb.Sheets("非标不带配件").PivotTables("数据透视表1" _
+        ).PivotFields("数量"), "总计数量", xlSum
+    wb.ShowPivotTableFieldList = False
+    ' Range("O4").Select
+    wb.Sheets("非标不带配件").PivotTables("数据透视表1").RowAxisLayout xlTabularRow
+    wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("模板名称").Subtotals = Array(False, _
+        False, False, False, False, False, False, False, False, False, False, False)
+    wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("生产单类型").Subtotals = Array(False, _
+        False, False, False, False, False, False, False, False, False, False, False)
+    wb.Sheets("非标不带配件").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
+    'wb.Sheets("非标不带配件").Columns("O:Q") = wb.Sheets("非标不带配件").Columns("O:Q").Value
+    wb.Sheets("非标不带配件").Columns("R:T") = wb.Sheets("非标不带配件").Columns("O:Q").Value
+    'wb.Sheets("非标不带配件").Columns("O:Q") = wb.Sheets("非标不带配件").Columns("R:T").Value
+    Dim end_O As Integer
+    end_O = wb.Sheets("非标不带配件").Cells(65535, 15).End(xlUp).Row - 1
+    wb.Sheets("非标不带配件").Range("O" & end_O & ": Q" & end_O).ClearContents
+
+    ' wb.Sheets("非标带配件").Activate
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "非标带配件!R1C2:R1048576C10", Version:=xlPivotTableVersion14).CreatePivotTable TableDestination:= _
+        "非标带配件!R1C15", TableName:="数据透视表2", DefaultVersion:=xlPivotTableVersion14
+    ' wb.Sheets("非标带配件").Select
+    ' wb.Sheets("非标带配件").Cells(1, 15).Select
+    wb.ShowPivotTableFieldList = True
+    With wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("生产单类型")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("模板名称")
+        .Orientation = xlRowField
+        .Position = 2
+    End With
+    wb.Sheets("非标带配件").PivotTables("数据透视表2").AddDataField wb.Sheets("非标带配件").PivotTables("数据透视表2" _
+        ).PivotFields("数量"), "总计数量", xlSum
+    wb.ShowPivotTableFieldList = False
+    ' Range("O4").Select
+    wb.Sheets("非标带配件").PivotTables("数据透视表2").RowAxisLayout xlTabularRow
+    wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("模板名称").Subtotals = Array(False, _
+        False, False, False, False, False, False, False, False, False, False, False)
+    wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("生产单类型").Subtotals = Array(False, _
+        False, False, False, False, False, False, False, False, False, False, False)
+    wb.Sheets("非标带配件").PivotTables("数据透视表2").RepeatAllLabels xlRepeatLabels
+    wb.Sheets("非标带配件").Columns("O:Q") = wb.Sheets("非标带配件").Columns("O:Q").Value
+    end_O = wb.Sheets("非标带配件").Cells(65535, 15).End(xlUp).Row - 1
+    wb.Sheets("非标带配件").Range("O" & end_O & ": Q" & end_O).ClearContents
+    
+End Sub
+
