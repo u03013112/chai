@@ -3,6 +3,8 @@ Option Explicit
 ' 整体思路再次更改，仍旧需要在本文件中进行主要数据操作，保证各种透视表能够正常工作，然后将需要的表格保存到指定文件
 ' 中间拆分的过程仍然用新的这版，保障中间上下文明了
 
+' TODO:search的写法有提高空间，目前每次查找都多查了至少一遍
+
 Function dirIsExist(dirFullPath As String) As Boolean
  Dim fso As Object
  Dim ret As Boolean
@@ -30,6 +32,8 @@ End Function
 Sub Log(shtName As String, cellName As String, str As String)
     Sheets(shtName).Range(cellName) = str
 End Sub
+
+' TODO:在打开的时候把临时状态都清了
 
 Sub chose1()
     Dim fso As Object, arr(1 To 10 ^ 2, 1 To 1), i
@@ -73,7 +77,6 @@ Sub chose1()
             Call Log("main", "D4", "清理完成")
         End If
         
-
         VBA.MkDir (outputDir)
         '提前建立合并清单文件
         createExcel (hbqdFilename)
@@ -82,27 +85,9 @@ Sub chose1()
         Set hbqdWb = Workbooks.Open(hbqdFilename)
         hbqdWb.Windows(1).Visible = False
         ThisWorkbook.Activate
-        Call HbqdStep1(hbqdWb)
-        Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件")
-        Dim excelFilename As Variant
-        Dim count As Long
-        count = 1
-        For Each excelFilename In excelFilenames
-            If excelFilename = Empty Then
-                Exit For
-            End If
-            Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename)
-            Application.ScreenUpdating = False
-            Call SjqdCopy(CStr(excelFilename), hbqdWb)
-            Application.ScreenUpdating = True
-            count = count + 1
-        Next
-        Call HbqdStep2(hbqdWb)
-        ' TODO:这里露底
-        hbqdWb.Windows(1).Visible = True
-        hbqdWb.Close (True)
-        Exit Sub
-        ' 在这里做一个分割，不再连续做
+        ' 拆分步骤，每一步都相对独立
+        Call HbqdStep1(hbqdFilename,excelFilenames)
+        Call HbqdStep2(hbqdFilename)
         Call HbqdStep3(hbqdFilename, qdcyFilename)
         Exit Sub
     Else
@@ -128,13 +113,12 @@ Sub chose1()
     MsgBox "拆分完毕"
 End Sub
 
-' 初始化合并清单，目前多次打开文件，有优化空间
-' 只是建立了Sheet，添加了第一行
-Sub HbqdStep1(wb As Workbook)
-    Dim arr(100, 1)
-    
-    'Application.ScreenUpdating = False
-        
+Sub HbqdStep1(hbqdFilename As String,excelFilenames As Variant)        
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(hbqdFilename)
+    wb.Windows(1).Visible = False
+    ThisWorkbook.Activate
+
     wb.Sheets.Add().Name = "设计非标件清单"
     wb.Sheets.Add().Name = "设计标准件清单"
     wb.Sheets.Add().Name = "设计打包清单"
@@ -148,9 +132,31 @@ Sub HbqdStep1(wb As Workbook)
         
     brr = Array("序号", "模板名称", "数量", "打包表名")
     wb.Sheets("设计打包清单").[a1].Resize(1, UBound(brr) + 1) = brr
+
+    Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件")
+    Dim excelFilename As Variant
+    Dim count As Long
+    count = 1
+    For Each excelFilename In excelFilenames
+        If excelFilename = Empty Then
+            Exit For
+        End If
+        Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename)
+        Application.ScreenUpdating = False
+        Call SjqdCopy(CStr(excelFilename), wb)
+        Application.ScreenUpdating = True
+        count = count + 1
+    Next
+    wb.Windows(1).Visible = True
+    wb.Close (True)
 End Sub
 
-Sub HbqdStep2(wb As Workbook)
+Sub HbqdStep2(hbqdFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(hbqdFilename)
+    wb.Windows(1).Visible = False
+    ThisWorkbook.Activate
+
     Dim endb As Integer
     Dim i_mbmc  As Integer '遍历模板名称的遍历字符
     With wb.Sheets("设计非标件清单")
@@ -197,14 +203,32 @@ Sub HbqdStep2(wb As Workbook)
             .Range("P" & i) = scdmc
         Next
     End With
+    wb.Windows(1).Visible = True
+    wb.Close (True)
 End Sub
 
+Sub HbqdStep3Test()
+    Dim hbqdFilename As String
+    Dim qdcyFilename As String
+    hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
+    qdcyFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1--清单差异.xlsx"
+
+    Call HbqdStep3(hbqdFilename,qdcyFilename)
+End Sub
+
+' TODO: 完全不再使用透视表，使用Dict替代透视表
 Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
+    Call Log("main", "D7", "开始检查数据，核对打包清单")
+    Application.DisplayAlerts = False
+    
+
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
+    ThisWorkbook.Activate
 
     Call StdOrNoStd(wb)
+    Application.ScreenUpdating = False
     Call QdDiff(wb)
     Application.DisplayAlerts = False
     If wb.Sheets("清单差异比对").Cells(Rows.count, 1).End(xlUp).Row > 1 Then
@@ -226,6 +250,7 @@ Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
     'wb.Sheets("设计标准件清单").Delete
     'wb.Sheets("设计非标件清单").Delete
     Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
     wb.Close (True)
 End Sub
 
@@ -435,16 +460,6 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     wb.Close 0
 End Sub
 
-Sub test()
-    Dim hbqdFilename As String
-    hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
-    Dim hbqdWb As Workbook
-    Set hbqdWb = Workbooks.Open(hbqdFilename)
-    hbqdWb.Windows(1).Visible = False
-    Call StdOrNoStd(hbqdWb)
-    hbqdWb.Close (False)
-End Sub
-
 ' 分出标准件非标件 ：沿用了旧名字，不明白意义，不改名
 Private Sub StdOrNoStd(wb As Workbook)
     Dim i As Integer '用于遍历第一个设计打包清单中的各个编号
@@ -477,10 +492,9 @@ Private Sub StdOrNoStd(wb As Workbook)
         enda = .Cells(Rows.count, 1).End(xlUp).Row
         enda = 500
         Quyu = ""
-        
-        ThisWorkbook.Sheets(1).[f7] = enda
+        Call Log("main", "D8", "共发现零件:" & enda-1 & "种")
         For i = 2 To enda
-            ThisWorkbook.Sheets(1).[f6] = i
+            Call Log("main", "D9", "已完成:" & i-1)
             
             mbmc = .Range("B" & i)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
@@ -515,6 +529,12 @@ End Sub
 
 ' 清单差异比对：沿用了旧名字，不明白意义，不改名
 Private Sub QdDiff(wb As Workbook)
+    If isSheetExist(wb, "清单差异比对") Then
+        wb.Sheets("清单差异比对").Delete
+    End If
+    If isSheetExist(wb, "清单汇总处理") Then
+        wb.Sheets("清单汇总处理").Delete
+    End If
     wb.Sheets.Add().Name = "清单差异比对"
     wb.Sheets.Add().Name = "清单汇总处理"
     wb.Sheets("清单差异比对").Activate
@@ -575,9 +595,11 @@ Private Sub QdDiff(wb As Workbook)
         krl = krl + 1
     Next krd
 
-    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
-        "清单汇总处理!R1C1:R" & (krj - 1) & "C2", Version:=xlPivotTableVersion10).CreatePivotTable _
-        TableDestination:="清单汇总处理!R1C7", TableName:="打包清单汇总透视表", DefaultVersion:= _
+    Dim cache
+    Set cache = wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        wb.Sheets("清单汇总处理").Range("A1:B" & (krj - 1)), Version:=xlPivotTableVersion10)
+    cache.CreatePivotTable _
+        TableDestination:=wb.Sheets("清单汇总处理").Range("G1"), TableName:="打包清单汇总透视表", DefaultVersion:= _
         xlPivotTableVersion10
         wb.Sheets("清单汇总处理").PivotTables("打包清单汇总透视表").AddFields RowFields:=Array("模板编号")
     With wb.Sheets("清单汇总处理").PivotTables("打包清单汇总透视表")
@@ -616,14 +638,13 @@ Private Sub QdDiff(wb As Workbook)
     Next krd
 End Sub
 
-
-
-
-
-
-
-
-
-
-
-
+Private Function isSheetExist(wb As Workbook, shtName As String) As Boolean
+    Dim sht As Worksheet
+    For Each sht In wb.Sheets
+        If sht.Name = shtName Then
+            isSheetExist = True
+            Exit Function
+        End If
+    Next
+    isSheetExist = False
+End Function
