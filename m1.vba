@@ -94,15 +94,6 @@ Sub chose1()
         Exit Sub
     End If
     
-    Dim wjj_name As String
-    
-    Dim endb As Integer
-    wjj_name = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
-    
-
-    
-    ThisWorkbook.SaveAs filename:=strfile & wjj_name & "\" & wjj_name & "-合并清单.xlsx"
-    
     '---写出现有模板名称对应的生产单名称----------------------------------------------------------
     
     'Call 打包清单分类
@@ -147,6 +138,7 @@ Sub HbqdStep1(hbqdFilename As String,excelFilenames As Variant)
         Application.ScreenUpdating = True
         count = count + 1
     Next
+    Call Log("main", "D6", "共处理" & count & "个文件")
     wb.Windows(1).Visible = True
     wb.Close (True)
 End Sub
