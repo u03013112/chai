@@ -731,7 +731,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     c2 = 2
     For c1 = 2 To endb
         If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "" Then
-            wb.Sheets("非标不带配件").Rows(c2) = wb.Sheets("设计打包清单").Rows(c1).Value
+            wb.Sheets("非标不带配件").Range("A"&c2&":M"&c2) = wb.Sheets("设计打包清单").Range("A"&c1&":M"&c1).Value
             c2 = c2 + 1
         End If
     Next c1
@@ -825,7 +825,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     c2 = 2
     For c1 = 2 To endb
         If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "带配件" Then
-            wb.Sheets("非标带配件").Rows(c2) = wb.Sheets("设计打包清单").Rows(c1).Value
+            wb.Sheets("非标带配件").Range("A"&c2&":M"&c2) = wb.Sheets("设计打包清单").Range("A"&c1&":M"&c1).Value
             c2 = c2 + 1
         End If
     Next c1
@@ -937,12 +937,14 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Sheets("非标不带配件").PivotTables("数据透视表1").PivotFields("生产单类型").Subtotals = Array(False, _
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标不带配件").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
-    wb.Sheets("非标不带配件").Columns("R:T") = wb.Sheets("非标不带配件").Columns("O:Q").Value
-    ' 这里由于不能覆盖写入，原有的O列改为R列
     Dim end_O As Integer
-    end_O = wb.Sheets("非标不带配件").Cells(65535, 18).End(xlUp).Row - 1
-    wb.Sheets("非标不带配件").Range("R" & end_O & ": T" & end_O).ClearContents
-    wb.Sheets("非标不带配件").Range("O:Q").Delete Shift:=xlLeft
+    end_O = wb.Sheets("非标不带配件").Cells(65535, 18).End(xlUp).Row
+
+    wb.Sheets("非标不带配件").Range("R"&end_O&":T"&end_O) = wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Value
+    ' 这里由于不能覆盖写入，原有的O列改为R列
+    
+    wb.Sheets("非标不带配件").Range("R" & end_O-1 & ": T" & end_O-1).ClearContents
+    wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Delete Shift:=xlLeft
 
     ' wb.Sheets("非标带配件").Activate
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -969,10 +971,11 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").PivotFields("生产单类型").Subtotals = Array(False, _
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").RepeatAllLabels xlRepeatLabels
-    wb.Sheets("非标带配件").Columns("R:T") = wb.Sheets("非标带配件").Columns("O:Q").Value
-    end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row - 1
-    wb.Sheets("非标带配件").Range("R" & end_O & ": T" & end_O).ClearContents
-    wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
+    
+    end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row
+    wb.Sheets("非标带配件").Range("R"&end_O&":T"& end_O) = wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Value
+    wb.Sheets("非标带配件").Range("R" & end_O -1 & ": T" & end_O -1).ClearContents
+    wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Delete Shift:=xlLeft
     Call Log("main", "D12", "《非标带配件》处理完成")
     wb.Windows(1).Visible = True
     wb.Close (True)    
