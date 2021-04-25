@@ -944,7 +944,8 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     ' 这里由于不能覆盖写入，原有的O列改为R列
     
     wb.Sheets("非标不带配件").Range("R" & end_O-1 & ": T" & end_O-1).ClearContents
-    wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Delete Shift:=xlLeft
+    ' wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Delete Shift:=xlLeft
+    wb.Sheets("非标不带配件").Range("O:Q").Delete Shift:=xlLeft
 
     ' wb.Sheets("非标带配件").Activate
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -975,7 +976,8 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row
     wb.Sheets("非标带配件").Range("R"&end_O&":T"& end_O) = wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Value
     wb.Sheets("非标带配件").Range("R" & end_O -1 & ": T" & end_O -1).ClearContents
-    wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Delete Shift:=xlLeft
+    ' wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Delete Shift:=xlLeft
+    wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
     Call Log("main", "D12", "《非标带配件》处理完成")
     wb.Windows(1).Visible = True
     wb.Close (True)    
