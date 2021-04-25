@@ -4,6 +4,7 @@ Option Explicit
 ' 中间拆分的过程仍然用新的这版，保障中间上下文明了
 
 ' TODO:search的写法有提高空间，目前每次查找都多查了至少一遍
+' TODO:Dbqdfl中间替代了数据库算法，改为数组遍历，排序与原版不同
 
 Function dirIsExist(dirFullPath As String) As Boolean
  Dim fso As Object
@@ -62,7 +63,6 @@ Sub chose1()
         Call Log("main", "D2", "已选择目录:" & dg.SelectedItems(1))
         fileFolderName = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
         outputDir = ThisWorkbook.path & "\" & fileFolderName
-        
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
         dbfqhzFilename = outputDir & "\" & fileFolderName & "-打包分区编号汇总.xlsx"
         qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
@@ -91,18 +91,11 @@ Sub chose1()
         Call HbqdStep3(hbqdFilename, qdcyFilename)
 
         Call Dbqdfl(hbqdFilename, dbfqhzFilename)
+        Call Cfdgzb(hbqdFilename, fpqdDirname)
         Exit Sub
     Else
         Exit Sub
-    End If
-    
-    '---写出现有模板名称对应的生产单名称----------------------------------------------------------
-    
-    'Call 打包清单分类
-    'Call 拆分到工作簿
-    
-    Application.ScreenUpdating = True
-    
+    End If    
     MsgBox "拆分完毕"
 End Sub
 
@@ -217,6 +210,15 @@ Sub HbqdStep4Test()
     dbfqhzFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-打包分区编号汇总.xlsx"
 
     Call Dbqdfl(hbqdFilename, dbfqhzFilename)
+End Sub
+
+Sub HbqdStep5Test()
+    Dim hbqdFilename As String
+    Dim fpqdDirname As String
+    hbqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\new-412-1-合并清单.xlsx"
+    fpqdDirname = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\"
+
+    Call Cfdgzb(hbqdFilename, fpqdDirname)
 End Sub
 
 ' TODO: 完全不再使用透视表，使用Dict替代透视表
@@ -668,23 +670,15 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = False
     ThisWorkbook.Activate
-
-    ' Dim cnn As Object, rs As Object
-    ' Set cnn = CreateObject("adodb.connection")
-    ' Set rs = CreateObject("adodb.recordset")
-    ' Dim SQL As String
     Dim a As Long
     Dim title_arr
     Dim i As Integer
     Dim endb As Integer
     Dim k As Integer
-    ' cnn.Open "provider=Microsoft.ACE.OLEDB.12.0;extended properties='excel 12.0 Macro;hdr=yes';data source=" & wb.FullName
 
-    ' SQL = "select 模板名称,数量,打包表名,分区编号,是否带配件 from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有' "
-    ' Set rs = cnn.Execute(SQL)
-    ' wb.Sheets("打包分区编号汇总").Range("B2").CopyFromRecordset rs
     Dim c1 As Long
     Dim c2 As Long
+    Call Log("main", "D10", "正在编制 《打包分区编号汇总》")
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -700,7 +694,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
 
     title_arr = Array("序号", "模板编号", "数量", "打包表名", "分区编号", "是否带配件", "备注")
     wb.Sheets("打包分区编号汇总").[A1].Resize(1, UBound(title_arr) + 1) = title_arr
-    ' rs.Close: Set rs = Nothing
+
     With wb.Sheets("打包分区编号汇总")
             endb = .Cells(65535, 2).End(xlUp).Row
             For i = 2 To endb
@@ -711,11 +705,6 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         .Columns("A:G").HorizontalAlignment = xlCenter
         .Columns("B:B").EntireColumn.AutoFit
     End With
-    ' wb.Sheets("打包分区编号汇总").Move
-    ' Dim dbnum  As String '打包num,即打包分区编号汇总移动出来后新的表格名字
-    ' dbnum = Replace(ThisWorkbook.Name, "合并清单.xlsm", "打包分区编号汇总.xlsx")
-    ' ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & dbnum
-    ' ActiveWorkbook.Close
 
     If fileIsExist(dbfqhzFilename) Then
         Kill dbfqhzFilename
@@ -732,16 +721,12 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     ' 打包分区编号汇总在wb里已经可以删了
     dbfqhzWb.Windows(1).Visible = True
     dbfqhzWb.Close (True)
-
+    Set dbfqhzWb = Nothing
+    Call Log("main", "D10", "《打包分区编号汇总》编制完成")
     '先对W1,W2做一下调整
     Dim W1_num As Integer
     Dim W2_num As Integer
-    ' wb.Sheets("非标不带配件").Activate
-    ' SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件 is null order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
-    ' Set rs = cnn.Execute(SQL)
-    ' wb.Sheets("非标不带配件").Range("A2").CopyFromRecordset rs
-    ' rs.Close: Set rs = Nothing
-
+    Call Log("main", "D11", "正在 处理《非标不带配件》")
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -833,12 +818,9 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         Next
     End With
     wb.Sheets("非标不带配件").Columns("J:J").Delete Shift:=xlToLeft
-    ' wb.Sheets("非标带配件").Activate
+    Call Log("main", "D11", "《非标带配件》处理完成")
 
-    ' SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件='带配件' order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
-    ' Set rs = cnn.Execute(SQL)
-    ' wb.Sheets("非标带配件").Range("A2").CopyFromRecordset rs
-    ' rs.Close: Set rs = Nothing
+    Call Log("main", "D12", "正在 处理《非标带配件》")
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -991,8 +973,77 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row - 1
     wb.Sheets("非标带配件").Range("R" & end_O & ": T" & end_O).ClearContents
     wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
-    
+    Call Log("main", "D12", "《非标带配件》处理完成")
     wb.Windows(1).Visible = True
     wb.Close (True)    
 End Sub
 
+
+
+' 拆分到工作簿 :
+Private Sub Cfdgzb(hbqdFilename As String,fpqdDirname As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(hbqdFilename)
+    wb.Windows(1).Visible = False
+    ThisWorkbook.Activate
+
+    Dim ary(), arr, brr, sh As Worksheet, d As Object, k, t, a, i&, j&, m&, l&
+    Dim arr1, k1, T1
+    Dim heji As Integer
+    Dim path As String
+    Dim ws As Worksheet
+    path = fpqdDirname
+    If Dir(path, vbDirectory) = "" Then
+        MkDir path
+    End If
+    Call Log("main", "D13", "正在将配件 拆分到《分配清单》目录中")
+    Application.DisplayAlerts = False
+    For Each ws In wb.Worksheets
+        If ws.Name = "非标带配件" Or ws.Name = "非标不带配件" Then
+            Set d = CreateObject("scripting.dictionary")
+            arr = ws.[A1].CurrentRegion
+            ReDim ary(1 To 200000, 1 To UBound(arr, 2))
+            For i = 2 To UBound(arr)
+                m = m + 1
+                d(arr(i, 10)) = d(arr(i, 10)) & "," & m
+                For j = 1 To UBound(arr, 2)
+                    ary(m, j) = arr(i, j)
+                Next
+            Next
+            k = d.Keys
+            t = d.Items
+            brr = ws.[A1].Resize(65536, UBound(arr, 2))
+            For i = 0 To d.Count - 1
+                m = 1
+                a = Split(t(i), ",")
+                For j = 1 To UBound(a)
+                    m = m + 1
+                    For l = 1 To UBound(arr, 2)
+                        brr(m, l) = ary(a(j), l)
+                    Next
+                    heji = brr(m, 4) + heji
+                Next
+                With Workbooks.Add(xlWBATWorksheet)
+                    With .Sheets(1).[A1].Resize(m, UBound(brr, 2))
+                        .Value = brr
+                        .Borders.LineStyle = xlContinuous
+                        .EntireColumn.AutoFit
+                    End With
+                    .SaveAs FileName:= path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    .Close
+                    heji = 0
+                End With
+            Next
+            Set d = Nothing
+            m = 0
+            Erase arr
+            Erase brr
+            Set k = Nothing
+            Set t = Nothing
+        End If
+    Next
+    Call Log("main", "D13", "将配件 拆分到《分配清单》目录中 完成")
+    Application.DisplayAlerts = True
+    wb.Windows(1).Visible = True
+    wb.Close (True)
+End Sub
