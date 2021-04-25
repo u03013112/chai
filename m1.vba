@@ -5,6 +5,7 @@ Option Explicit
 
 ' TODO:search的写法有提高空间，目前每次查找都多查了至少一遍
 ' TODO:Dbqdfl中间替代了数据库算法，改为数组遍历，排序与原版不同
+' TODO:可以把过程再拆一拆，让他自己GC，以免内存不足报错
 
 Function dirIsExist(dirFullPath As String) As Boolean
  Dim fso As Object
