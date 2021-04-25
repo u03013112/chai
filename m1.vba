@@ -669,10 +669,10 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Windows(1).Visible = False
     ThisWorkbook.Activate
 
-    Dim cnn As Object, rs As Object
-    Set cnn = CreateObject("adodb.connection")
-    Set rs = CreateObject("adodb.recordset")
-    Dim SQL As String
+    ' Dim cnn As Object, rs As Object
+    ' Set cnn = CreateObject("adodb.connection")
+    ' Set rs = CreateObject("adodb.recordset")
+    ' Dim SQL As String
     Dim a As Long
     Dim title_arr
     Dim i As Integer
@@ -693,13 +693,14 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
             wb.Sheets("打包分区编号汇总").Range("C"&c2) = wb.Sheets("设计打包清单").Range("C"&c1).Value
             wb.Sheets("打包分区编号汇总").Range("D"&c2) = wb.Sheets("设计打包清单").Range("D"&c1).Value
             wb.Sheets("打包分区编号汇总").Range("E"&c2) = wb.Sheets("设计打包清单").Range("E"&c1).Value
-            wb.Sheets("打包分区编号汇总").Range("K"&c2) = wb.Sheets("设计打包清单").Range("K"&c1).Value
+            wb.Sheets("打包分区编号汇总").Range("F"&c2) = wb.Sheets("设计打包清单").Range("K"&c1).Value
+            c2 = c2 + 1
         End If
     Next c1
 
     title_arr = Array("序号", "模板编号", "数量", "打包表名", "分区编号", "是否带配件", "备注")
     wb.Sheets("打包分区编号汇总").[A1].Resize(1, UBound(title_arr) + 1) = title_arr
-    rs.Close: Set rs = Nothing
+    ' rs.Close: Set rs = Nothing
     With wb.Sheets("打包分区编号汇总")
             endb = .Cells(65535, 2).End(xlUp).Row
             For i = 2 To endb
@@ -729,16 +730,27 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Call copySheet(wb.Sheets("打包分区编号汇总"), dbfqhzWb.Sheets("打包分区编号汇总"))
     ' TODO :可能需要把自带的sheet1删了
     ' 打包分区编号汇总在wb里已经可以删了
+    dbfqhzWb.Windows(1).Visible = True
     dbfqhzWb.Close (True)
 
     '先对W1,W2做一下调整
     Dim W1_num As Integer
     Dim W2_num As Integer
-    wb.Sheets("非标不带配件").Activate
-    SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件 is null order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
-    Set rs = cnn.Execute(SQL)
-    wb.Sheets("非标不带配件").Range("A2").CopyFromRecordset rs
-    rs.Close: Set rs = Nothing
+    ' wb.Sheets("非标不带配件").Activate
+    ' SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件 is null order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
+    ' Set rs = cnn.Execute(SQL)
+    ' wb.Sheets("非标不带配件").Range("A2").CopyFromRecordset rs
+    ' rs.Close: Set rs = Nothing
+
+    endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
+    c2 = 2
+    For c1 = 2 To endb
+        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "" Then
+            wb.Sheets("非标不带配件").Rows(c2) = wb.Sheets("设计打包清单").Rows(c1).Value
+            c2 = c2 + 1
+        End If
+    Next c1
+
     title_arr = Array("序号", "模板名称", "模板编号", "数量", "W1", "W2", "L", "图纸编号", "分区编号", "辅助列", "生产单类型")
     With wb.Sheets("非标不带配件")
         .Columns("J:J").Cut
@@ -821,12 +833,21 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         Next
     End With
     wb.Sheets("非标不带配件").Columns("J:J").Delete Shift:=xlToLeft
-    wb.Sheets("非标带配件").Activate
+    ' wb.Sheets("非标带配件").Activate
 
-    SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件='带配件' order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
-    Set rs = cnn.Execute(SQL)
-    wb.Sheets("非标带配件").Range("A2").CopyFromRecordset rs
-    rs.Close: Set rs = Nothing
+    ' SQL = "select *  from [设计打包清单$] where 分区编号<>'标准件'and 分区编号<>'生产清单中没有'and 是否带配件='带配件' order by 生产单类型,模板名称,W1,W2,辅助列,非标图纸编号"
+    ' Set rs = cnn.Execute(SQL)
+    ' wb.Sheets("非标带配件").Range("A2").CopyFromRecordset rs
+    ' rs.Close: Set rs = Nothing
+    endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
+    c2 = 2
+    For c1 = 2 To endb
+        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "带配件" Then
+            wb.Sheets("非标带配件").Rows(c2) = wb.Sheets("设计打包清单").Rows(c1).Value
+            c2 = c2 + 1
+        End If
+    Next c1
+
     With wb.Sheets("非标带配件")
         .Columns("K:K").ClearContents
         .Columns("J:J").Cut
@@ -908,7 +929,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         Next
     End With
     wb.Sheets("非标带配件").Columns("K:L").Delete Shift:=xlToLeft
-    cnn.Close: Set cnn = Nothing
+    ' cnn.Close: Set cnn = Nothing
     '将各种类型的生产单类型及模板名称列出表格
     ' wb.Sheets("非标不带配件").Activate
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -939,6 +960,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Dim end_O As Integer
     end_O = wb.Sheets("非标不带配件").Cells(65535, 18).End(xlUp).Row - 1
     wb.Sheets("非标不带配件").Range("R" & end_O & ": T" & end_O).ClearContents
+    wb.Sheets("非标不带配件").Range("O:Q").Delete Shift:=xlLeft
 
     ' wb.Sheets("非标带配件").Activate
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
@@ -966,8 +988,11 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").RepeatAllLabels xlRepeatLabels
     wb.Sheets("非标带配件").Columns("R:T") = wb.Sheets("非标带配件").Columns("O:Q").Value
-    end_O = wb.Sheets("非标带配件").Cells(65535, 15).End(xlUp).Row - 1
-    wb.Sheets("非标带配件").Range("O" & end_O & ": Q" & end_O).ClearContents
+    end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row - 1
+    wb.Sheets("非标带配件").Range("R" & end_O & ": T" & end_O).ClearContents
+    wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
     
+    wb.Windows(1).Visible = True
+    wb.Close (True)    
 End Sub
 
