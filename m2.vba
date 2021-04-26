@@ -1,13 +1,15 @@
-Private Dim txtlpdm As String ' 楼P代码
-Private Dim txtgcmc As String ' 工程名称
-Private Dim txtqyjx As String ' 区域简写
-Private Dim txtjhdh As String ' 计划单号
-Private Dim txtbmcl As String ' 表面处理
-Private Dim txtxdsj As String ' 下单时间
-Private Dim txtgyxm As String ' 工艺姓名
-Private Dim txtgydh As String ' 工艺电话
-Private Dim txtshxm As String ' 审核姓名
-Private Dim txtscch As String ' 生产厂号
+Option Explicit
+
+Dim txtlpdm As String ' 楼P代码
+Dim txtgcmc As String ' 工程名称
+Dim txtqyjx As String ' 区域简写
+Dim txtjhdh As String ' 计划单号
+Dim txtbmcl As String ' 表面处理
+Dim txtxdsj As String ' 下单时间
+Dim txtgyxm As String ' 工艺姓名
+Dim txtgydh As String ' 工艺电话
+Dim txtshxm As String ' 审核姓名
+Dim txtscch As String ' 生产厂号
 
 ' TODO 输入检查
 Sub init()
@@ -27,8 +29,8 @@ End Sub
 Sub testFB1()
     Dim fpqdFilename As String
     Dim scqdFilename As String
-    fpqdFilename = ""
-    scqdFilename = "" & strfile & txtlpdm & gcmc & qysr & "生产单.xlsm"
+    fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & strfile & txtlpdm & gcmc & qysr & "生产单.xlsm"
     Call FB1(fpqdFilename,scqdFilename)
 End Sub
 
