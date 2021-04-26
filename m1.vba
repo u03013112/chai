@@ -709,9 +709,9 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
 
     If fileIsExist(dbfqhzFilename) Then
         Kill dbfqhzFilename
-    Else
-        Call createExcel(dbfqhzFilename)
     End If
+    Call createExcel(dbfqhzFilename)
+    
     Dim dbfqhzWb As Workbook
     Set dbfqhzWb = Workbooks.Open(dbfqhzFilename)
     dbfqhzWb.Windows(1).Visible = False
