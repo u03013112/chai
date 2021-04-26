@@ -59,7 +59,6 @@ Sub chose1()
         ' [f5] = getArrLen(excelFilenames)
         'TODO 检测找到的文件是否合格
 
-        fpqdDirname = outputDir & "\分配清单\"
         '在本地进行临时处理
         Call Log("main", "D2", "已选择目录:" & dg.SelectedItems(1))
         fileFolderName = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
@@ -67,6 +66,7 @@ Sub chose1()
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
         dbfqhzFilename = outputDir & "\" & fileFolderName & "-打包分区编号汇总.xlsx"
         qdcyFilename = outputDir & "\" & fileFolderName & "-清单差异.xlsx"
+        fpqdDirname = outputDir & "\分配清单\"
         If dirIsExist(outputDir) = True Then
             Dim result
             Call Log("main", "D3", "存有旧状态，或已完成文件，需要清理才能继续")
