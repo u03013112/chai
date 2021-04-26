@@ -30,7 +30,7 @@ Sub testFB1()
     Dim fpqdFilename As String
     Dim scqdFilename As String
     fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
-    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "生产单.xlsx"
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB1(fpqdFilename, scqdFilename)
 End Sub
 
@@ -52,7 +52,8 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
         wb.Sheets("临时").Delete
     End If
     wb.Sheets.Add().Name = "临时"
-    Call copySheet(ThisWorkbook.Sheets("模板生产计划单"), wb.Sheets("临时"))
+    ' Call copySheet(ThisWorkbook.Sheets("模板生产计划单"), wb.Sheets("临时"))
+    ThisWorkbook.Sheets("模板生产计划单").Cells.Copy wb.Sheets("临时").[A1]
 
     ' ZXD拷贝过去
     ' TODO: 这些数据都应该是追加的，现在全都是替换，之后看看是生成多个文件，还是汇总起来
@@ -60,7 +61,8 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
         wb.Sheets("ZXD").Delete
     End If
     wb.Sheets.Add().Name = "ZXD"
-    Call copySheet(ThisWorkbook.Sheets("模板生产计划单"), wb.Sheets("ZXD"))
+    ' Call copySheet(ThisWorkbook.Sheets("模板生产计划单"), wb.Sheets("ZXD"))
+    ThisWorkbook.Sheets("ZXD").Cells.Copy wb.Sheets("ZXD").[A1]
 
     ' 重新起名字，为了后面代码和他保持一致
     Dim qysr, txtsdsj, gydh, gcmc, gyxm, shxm, jhdh, ptfs, scch
@@ -74,13 +76,32 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
     ptfs = txtbmcl
     scch = txtscch
 
+    With wb.Sheets("临时")
+        .Range("B3") = txtlpdm
+        .Range("B2") = txtgcmc
+        .Range("G2") = qysr
+        .Range("I2") = txtsdsj
+        .Range("G3") = txtjhdh
+        .Range("K3") = txtbmcl
+        If Len(.Range("B5")) = 0 Then
+                .Range("B5") = txtgyxm
+        End If
+        If Len(.Range("F5")) = 0 Then
+                .Range("F5") = txtshxm
+        End If
+    End With
+
     wb.Sheets("ZXD").Range("B2") = gcmc & qysr
     wb.Sheets("ZXD").Range("A1") = "模板转序记录表 (" & ptfs & ")"
     
     
     Dim wbTmp As Workbook
     Set wbTmp = Workbooks.Open(fpqdFilename)
-    wbTmp.Sheets(1).Cells.Copy wb.Worksheets("erp").[A1]
+    If isSheetExist(wb, "erp") Then
+        wb.Sheets("erp").Delete
+    End If
+    wb.Sheets.Add().Name = "erp"
+    wbTmp.Sheets(1).Cells.Copy wb.Sheets("erp").[A1]
     wbTmp.Close False
 
     Dim endd, Slhj
@@ -102,8 +123,9 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
         wb.Sheets("erp").Columns("A:k").FormatConditions.Delete '清空条件格式
         wb.Sheets("erp").Columns("A:J").HorizontalAlignment = xlCenter '水平方向居中
         Application.ScreenUpdating = True
-        MsgBox "总数量： " & Slhj & " 件"
+        wb.Windows(1).Visible = True
         wb.Close (True)
+        MsgBox "总数量： " & Slhj & " 件"
     End If
 End Sub
 
