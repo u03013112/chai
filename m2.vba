@@ -727,55 +727,46 @@ Sub FB2(scqdFilename As String)
         End If
     Next
 
+    ' wb.Sheets("erp").Columns("U:U").Select
+    ' Selection.Delete
+    wb.Sheets("erp").Columns("U:U").Delete
 
-
-
-
-
-
-
-
-
-
-
-
-
- 
-                    wb.Sheets("erp").Columns("U:U").Select
-             Selection.Delete
     '根据零件的分区编号得出来是哪个区域, '这一步将每个图纸用到的非标件图纸取出来
-    wb.Sheets("erp").Columns("M:N").Select
+    ' wb.Sheets("erp").Columns("M:N").Select
     wb.Sheets("erp").Range("M1") = "分区"
     wb.Sheets("erp").Range("N1") = "图纸编号"
-    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
         "erp!R1C13:R1048576C14", Version:=xlPivotTableVersion14).CreatePivotTable TableDestination:= _
         "erp!R1C18", TableName:="数据透视表2", DefaultVersion:=xlPivotTableVersion14
-
-    ActiveWorkbook.ShowPivotTableFieldList = True
-    With ActiveSheet.PivotTables("数据透视表2").PivotFields("分区")
+    wb.ShowPivotTableFieldList = True
+    With wb.Sheets("erp").PivotTables("数据透视表2").PivotFields("分区")
             .Orientation = xlRowField
         .Position = 1
     End With
-    With ActiveSheet.PivotTables("数据透视表2").PivotFields("图纸编号")
-            .Orientation = xlRowField
+    With wb.Sheets("erp").PivotTables("数据透视表2").PivotFields("图纸编号")
+        .Orientation = xlRowField
         .Position = 2
     End With
-    ActiveWorkbook.ShowPivotTableFieldList = False
-    Columns("R:R").Select
-    Selection.Copy
-    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
-        :=False, Transpose:=False
-    Application.CutCopyMode = False
-    endR = Sheets("erp").[R6000].End(xlUp).Row
-    Range("R" & endR) = ""
-    Range("R" & endR - 1) = ""
-    Range("R1") = "分区非大样图"
-    Columns("Q:R").Replace "*白*", ""
-    Columns("R:R").Cut
-    Columns("P:P").Select
-    ActiveSheet.Paste
-    Columns("M:O").Delete Shift:=xlToLeft
-    Columns("I:J").Columns.AutoFit
+    wb.ShowPivotTableFieldList = False
+    ' Columns("R:R").Select
+    ' Selection.Copy
+    ' Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+    '     :=False, Transpose:=False
+    ' Application.CutCopyMode = False
+    wb.Sheets("erp").Columns("R:R") = wb.Sheets("erp").Columns("R:R").Value
+    endR = wb.Sheets("erp").[R6000].End(xlUp).Row
+    wb.Sheets("erp").Range("R" & endR) = ""
+    wb.Sheets("erp").Range("R" & endR - 1) = ""
+    wb.Sheets("erp").Range("R1") = "分区非大样图"
+    wb.Sheets("erp").Columns("Q:R").Replace "*白*", ""
+    ' wb.Sheets("erp").Columns("R:R").Cut
+    ' wb.Sheets("erp").Columns("P:P").Select
+    ' wb.Sheets("erp").Paste
+    wb.Sheets("erp").Columns("P:P") = wb.Sheets("erp").Columns("R:R").Value
+    wb.Sheets("erp").Columns("R:R").Delete
+    
+    wb.Sheets("erp").Columns("M:O").Delete Shift:=xlToLeft
+    wb.Sheets("erp").Columns("I:J").Columns.AutoFit
     'MsgBox ("总数量：" & Slhj & " 件" & Chr(10) & "蓝色格为生产单的第25个零件号" & Chr(10) & "注意特殊型材" & Chr(10) & "如平面板编号包含D,判断是否用一代板")
    ' MsgBox ("注意特殊型材" & Chr(10) & "如平面板编号包含D,判断是否用一代板")
     wb.Windows(1).Visible = True
