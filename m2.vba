@@ -853,6 +853,378 @@ Sub FB3(scqdFilename As String)
     wb.Close (True)
 End Sub
 
+' 转序单生产单
+Sub FB4(scqdFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(scqdFilename)
+    'wb.Windows(1).Visible = False
+    ' ThisWorkbook.Activate
+
+    Dim p&, zhs&, i1&, jch&, PE&, sn&
+
+    ' Application.ScreenUpdating = False
+    
+    zhs = wb.Sheets("erp").[b6000].End(xlUp).Row
+    
+    wb.Sheets("erp").Columns("M:O").Delete Shift:=xlToLeft
+    wb.Sheets("erp").Columns("A:J").HorizontalAlignment = xlCenter
+    wb.Sheets("erp").Range("A1:j6000").Interior.Pattern = xlNone
+    wb.Sheets("erp").Columns("B:C").Insert
+    wb.Sheets("erp").Columns("H:H").Insert
+    
+    wz = Mid(wb.Sheets("erp").Cells(1, 1), 1, 4)
+    
+    For p = 1 To zhs '合并图纸编号单元格，以方便放入转序单
+        If Mid(wb.Sheets("erp").Cells(p, 1), 1, 4) = wz Then
+            jsp = jsp + 1 '计数p
+        Else            
+            wb.Sheets("erp").Cells(p, 1).Resize(, 3).Merge
+            wb.Sheets("erp").Cells(p, 7).Resize(, 2).Merge        
+        End If    
+    Next
+    
+    ' Sheet5.Activate
+    'Sheets("ZXD").Range("A2") = "项目名称：" & Sheet5.Range("B2") & Sheet5.Range("G2")
+    '=======================================================================================
+    '191211按模板厂需求调整生产计划单格式
+    
+    Dim aaa As String '用于存储生产单号
+    Dim shp
+    
+    wb.Sheets("临时").Rows(3).RowHeight = 70
+    wb.Sheets("临时").Rows("7:31").RowHeight = 19
+    wb.Sheets("临时").Range("B3").Font.Size = 36
+    
+    '=======================================================================================
+    ' 原本在下面循环里的代码，复制之前做，提高效率
+    For Each pic In wb.Sheets("临时").Pictures        
+        pic.Left = (pic.TopLeftCell.Width - pic.Width) / 2 + 2.3 * pic.TopLeftCell.Left
+        pic.Top = (pic.TopLeftCell.Height - pic.Height) / 2 + 1.05 * pic.TopLeftCell.Top        
+    Next
+
+    For zjb = 1 To jsp - 1 '增加表        
+        ' Sheet5.Select
+        ' Sheet5.Copy Before:=Sheets("erp")
+        wb.Sheets.Add(before:=wb.Sheets("erp")).Name = "临时表" & zjb
+        wb.Sheets("临时").Cells.Copy wb.Sheets("临时表" & zjb).[A1]
+    Next
+       
+    ' Sheets("erp").Activate
+    
+    wb.Sheets("erp").Range("A1:H" & zhs).Borders.LineStyle = xlContinuous  '合并居中加边框
+    
+    For i1 = 1 To zhs + jsp * 2        
+        If Mid(wb.Sheets("erp").Cells(i1, 1), 1, 4) = wz Then            
+            wb.Sheets("erp").Rows(i1).Insert
+            wb.Sheets("erp").Rows(i1 + 2).Insert            
+            i1 = i1 + 1        
+        End If    
+    Next
+    
+    Dim bs As Long
+    Dim sht As Worksheet
+    bs = 1
+    For jch = 1 To zhs + jsp * 2 '加插入行的总行数    
+        On Error Resume Next        
+        If Mid(wb.Sheets("erp").Cells(jch, 1), 1, 4) = wz Then            
+            Set sht = wb.Sheets("erp").Sheets("临时表" & bs)
+            bs = bs + 1
+            r = wb.Sheets("erp").Cells(jch + 2, 1).CurrentRegion.Rows.Count '连续区域的行数
+            'c = wb.Sheets("erp").Cells(jch + 2, 1).CurrentRegion.Columns.Count '连续区域的列数，然并卵
+            xck = wb.Sheets("erp").Cells(jch + 2, 5) '型材宽度
+            mbmc = wb.Sheets("erp").Cells(jch + 2, 1).Text '模板名称            
+            wb.Sheets("erp").Cells(jch, 1).Copy sht.[B3:E3] '转序单号复制
+            
+            '=======================================================================================
+            '191211按模板厂需求调整生产计划单格式
+            
+            ' sht.Activate
+            
+            With sht
+                ' 这段实在看不懂，什么SB逻辑
+                aaa = .Range("B3")
+                .Range("B3") = "=code128(""" & aaa & """,B3,,230,)"
+                .Range("B3") = aaa
+                .Range("B3").Font.ColorIndex = 2                
+            End With
+            
+            ' Sheets("erp").Activate            
+            '=======================================================================================
+
+            
+            wb.Sheets("erp").Cells(jch + 2, 1).Resize(r, 4).Copy sht.[B7] '图号及数量复制
+            wb.Sheets("erp").Cells(jch + 2, 7).Resize(r, 4).Copy sht.[F7] '图纸编号及分区
+            
+            wb.Sheets("erp").Cells(jch + 2, 15).Resize(r, 2).Copy
+            sht.[J7].PasteSpecial Paste:=xlPasteValues  '备注的复制
+            
+            Quyu = wb.Sheets("erp").Range("N" & jch + 2)
+            xch = wb.Sheets("erp").Range("L" & jch + 2)
+            dingchi = wb.Sheets("erp").Range("M" & jch + 2)
+            
+            If Left(Quyu, 2) = "TP" Then sht.Range("J7:J" & (6 + r)) = "带配件"
+            
+            ' sht.Activate
+            
+            sht.[G2] = Quyu
+            sht.[B4:E4] = xch  '型材截面号的输入
+            sht.[G4] = dingchi '定尺输入
+
+            wb.Sheets("计算用表").Range("B2:C31").ClearContents
+            
+            ' Sheets("erp").Activate
+                
+            wb.Sheets("erp").Cells(jch + 2, 4).Resize(r, 1).Copy wb.Sheets("计算用表").[C2]
+            wb.Sheets("erp").Cells(jch + 2, 6).Resize(r, 1).Copy wb.Sheets("计算用表").[B2]
+            
+            ' Sheets("计算用表").Activate
+                
+            wb.Sheets("计算用表").[f1] = dingchi
+                
+            Call Z优化
+            
+            If wb.Sheets("计算用表").[f21] = 0 Then                    
+                sht.[I4:K4] = 1                    
+            Else                
+                wb.Sheets("计算用表").[f21].Copy sht.[I4：K4]                
+            End If
+                
+            ' Sheets("erp").Activate        
+        End If
+    Next
+
+    ' Sheet5.Activate
+
+    Dim xh As Long
+    xh = 0
+    For PE = 1 To wb.Sheets.Count    
+        ' If InStr(Sheets(PE).[A1], "模板") > 0 Then
+        If InStr(wb.Sheets(PE).Name, "临时表") > 0 Then
+            xh = xh + 1
+            wb.Sheets("ZXD").Cells(xh + 3, 1) = xh
+            wb.Sheets("ZXD").Cells(xh + 3, 2) = wb.Sheets("临时表" & xh).Cells(3, 2)
+            wb.Sheets("ZXD").Cells(xh + 3, 3) = wb.Sheets("临时表" & xh).Cells(3, 9)
+            'wb.Sheets("ZXD").Cells(xh + 3, 10) = wb.Sheets("临时表" & xh).Cells(4, 2)
+            'wb.Sheets("ZXD").Cells(xh + 3, 13) = wb.Sheets("临时表" & xh).Cells(4, 6)
+            'wb.Sheets("ZXD").Cells(xh + 3, 11) = wb.Sheets("临时表" & xh).Cells(4, 7)
+            'wb.Sheets("ZXD").Cells(xh + 3, 12) = wb.Sheets("临时表" & xh).Cells(4, 9)
+            
+            wb.Sheets("临时表" & xh).Name = wb.Sheets("临时表" & xh).Cells(3, 2)
+        
+            If wb.Sheets("ZXD").Cells(xh + 3, 2) = "" Then
+                wb.Sheets("ZXD").Cells(xh + 3, 3) = ""
+                wb.Sheets("ZXD").Cells(xh + 3, 10) = ""
+                wb.Sheets("ZXD").Cells(xh + 3, 11) = ""
+                wb.Sheets("ZXD").Cells(xh + 3, 12) = ""        
+            End If    
+        End If    
+    Next
+   
+    ' wb.Sheets("erp").Activate
+    
+    wb.Sheets("erp").Columns("B:C").Delete
+    wb.Sheets("erp").Columns("F:F").Delete
+    
+    wb.Sheets("erp").Columns("A:A").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    
+    '=======================================================================================
+    '191203按模板厂需求增加erp工作表整理导出环节
+    Dim brr
+    
+    Dim t As Integer
+    Dim enderp As Integer
+    Dim scdh As String
+    Dim erpfzl As String
+    Dim erpjs As Integer
+    
+    Dim qcbm As String
+    
+    ' Sheets("erp").Copy after:=Sheets("erp")
+    ' ActiveSheet.Name = ("erp库")
+    wb.Sheets.Add(after:=wb.Sheets("erp")).Name = "erp库"
+    wb.Sheets("erp").Cells.Copy wb.Sheets("erp库").[A1]
+    
+    ' Sheets("erp库").Activate
+    
+    enderp = wb.Sheets("erp库").Range("B65536").End(xlUp).Row   
+    For t = 1 To enderp    
+        If Len(wb.Sheets("erp库").Range("B" & t)) = 0 Then        
+            scdh = wb.Sheets("erp库").Range("A" & t)            
+        Else            
+            wb.Sheets("erp库").Range("L" & t) = scdh
+            wb.Sheets("erp库").Range("M" & t) = scdh & wb.Sheets("erp库").Range("K" & t) & wb.Sheets("erp库").Range("G" & t)            
+        End If        
+    Next t
+    
+    wb.Sheets("erp库").Columns("B:B").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    wb.Sheets("erp库").Columns("L:L").Cut
+    wb.Sheets("erp库").Columns("A:A").Insert Shift:=xlToRight
+    wb.Sheets("erp库").Columns("B:B").Delete
+    wb.Sheets("erp库").Columns("C:F").Delete
+    wb.Sheets("erp库").Columns("D:F").Delete
+    wb.Sheets("erp库").Columns("B:B").Cut
+    wb.Sheets("erp库").Columns("E:E").Insert Shift:=xlToRight
+    wb.Sheets("erp库").Columns("C:C").Cut
+    wb.Sheets("erp库").Columns("B:B").Insert Shift:=xlToRight
+    
+    wb.Sheets("erp库").Rows(1).Insert
+    brr = Array("生产单号", "区域简写", "生产单类型", "支数", "参考列", "支数合计")
+    wb.Sheets("erp库").[A1].Resize(1, UBound(brr) + 1) = brr
+    
+    enderp = wb.Sheets("erp库").Range("B65536").End(xlUp).Row
+    
+    wb.Sheets("erp库").Columns("A:F").EntireColumn.AutoFit
+    wb.Sheets("erp库").Range("A1:F" & enderp).HorizontalAlignment = xlCenter
+    wb.Sheets("erp库").Range("A1:F" & enderp).Borders.LineStyle = xlContinuous
+    
+    With wb.Sheets("erp库").Sort.SortFields    
+        .Clear
+        .Add Key:=wb.Sheets("erp库").Range("A2"), Order:=1
+        .Add Key:=wb.Sheets("erp库").Range("B2"), Order:=1
+        .Add Key:=wb.Sheets("erp库").Range("C2"), Order:=1        
+    End With
+    
+    With wb.Sheets("erp库").Sort    
+        .SetRange wb.Sheets("erp库").Range("A2:E" & enderp)
+        .Header = 2
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply        
+    End With
+    
+    erpfzl = wb.Sheets("erp库").Range("E2")
+    erpjs = 0
+    
+    For t = 2 To enderp + 1    
+        If wb.Sheets("erp库").Range("E" & t) <> erpfzl Then            
+            wb.Sheets("erp库").Range("F" & t - 1) = erpjs            
+            erpfzl = wb.Sheets("erp库").Range("E" & t)
+            erpjs = wb.Sheets("erp库").Range("D" & t)            
+        Else        
+            erpjs = erpjs + wb.Sheets("erp库").Range("D" & t)            
+        End If        
+    Next t
+    
+    wb.Sheets("erp库").Columns("F:F").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    wb.Sheets("erp库").Columns("D:E").Delete
+    ActiveWindow.ScrollRow = 1
+    ' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    ' TODO: 上面还有一个函数没有搞，下面这个另存为暂时还没看懂，分不开
+    qcbm = Replace(ThisWorkbook.Name, "生产单.xlsm", "库数据")
+    
+    Worksheets(Array("erp库")).Copy
+    ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & qcbm, FileFormat:=51
+    ActiveWorkbook.Close SaveChanges:=True
+    
+    Application.DisplayAlerts = False
+    
+    Sheets("erp库").Delete
+    
+    Application.DisplayAlerts = True
+    
+    '=======================================================================================
+
+    
+    Sheets("ZXD").Activate
+    
+    zxdzh = Sheets("ZXD").Range("B65536").End(xlUp).Row
+    
+    Columns("A:H").HorizontalAlignment = xlCenter
+    Sheets("ZXD").Range("B2").HorizontalAlignment = xlLeft
+    
+    For xh = 4 To zxdzh
+        
+        v = Split(Range("B" & xh), "-")
+        XHZ = Right(Range("B" & xh), Len(v(UBound(v))))
+        
+        Range("A" & xh) = XHZ
+    
+    Next
+    
+    For xh = 4 To zxdzh
+        
+        If Range("A" & xh) = 1 Then
+             
+             JISHU1 = JISHU1 + 1
+        
+        End If
+    
+    Next
+    
+    If JISHU1 > 1 Then
+        
+        For crhj = 5 To zxdzh + (JISHU1 - 1) * 3 '插入合计
+            
+            If Range("A" & crhj) = "1" Then
+            
+                Rows(crhj & ":" & (crhj + 2)).Insert
+                crhj = crhj + 3
+            
+            End If
+        
+        Next
+        
+        crhj = ""
+        
+        zxdzh = Sheets("ZXD").Range("B65536").End(xlUp).Row
+        
+        For crhj = 5 To zxdzh
+            
+            If Range("A" & crhj) = "1" Then
+            
+                Range("B" & (crhj - 2)) = "合计"
+                Range("C" & (crhj - 2)) = Application.WorksheetFunction.Sum(Range("C" & (crhj - 3) & ": C" & ((crhj - 3) - HS + 2)))
+                
+                HS = 1
+            
+            Else
+            
+                HS = HS + 1
+            
+            End If
+        
+        Next
+        
+        Range("B" & zxdzh + 2) = "合计"
+        Range("C" & zxdzh + 2) = Application.WorksheetFunction.Sum(Range("C" & zxdzh & ": C" & (zxdzh - HS + 1)))
+        
+        i = "'"
+        
+        For i = 4 To zxdzh + 2
+            
+            If Range("B" & i) = "合计" Then
+                
+                Sheets("ZXD").HPageBreaks.Add Range("b" & i + 2)
+            
+            End If
+        
+        Next
+    
+    Else
+        
+        Range("B" & zxdzh + 2) = "合计"
+        Range("C" & zxdzh + 2) = WorksheetFunction.Sum(Range("C" & zxdzh & ": C4"))
+    
+    End If
+    
+    Range("A" & zxdzh + 1 & ":A" & (zxdzh + 100)).ClearContents
+    
+    Sheets("ZXD").PageSetup.PrintArea = "$A$1:$H$" & zxdzh + 2
+    Sheets("ZXD").PageSetup.PrintTitleRows = "$1:$3"
+    Range("A4:H" & zxdzh + 2).Borders.Weight = 2
+    'Range("A4:H" & ZXDZH + 2).BorderAround , 3
+    Rows("4:" & zxdzh + 2).RowHeight = 20
+    
+    Columns("J:J").EntireColumn.AutoFit
+    
+    Application.ScreenUpdating = True
+    
+    MsgBox ("备料单中型材须拆分为一个单元格只有一种型材型号")
+    wb.Windows(1).Visible = True
+    wb.Close (True)
+End Sub
+
 
 ' copySheet效果很差，基本作废了，建议用excel自带的copy替代
 Private Sub copySheet(src As Worksheet, dst As Worksheet)
