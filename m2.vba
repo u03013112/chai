@@ -33,6 +33,11 @@ Sub testFB1()
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB1(fpqdFilename, scqdFilename)
 End Sub
+Sub testFB2()
+    Dim scqdFilename As String
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Call FB2(scqdFilename)
+End Sub
 
 ' 实际不再需要手选目标了，但是简单处理还是先分开
 ' fpqdFilename 配清单中的零件图，每一个都需要处理
@@ -126,12 +131,11 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
         MsgBox "总数量： " & Slhj & " 件"
     End If
 End Sub
-
 ' 合并同类模板并分类
 Sub FB2(scqdFilename As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(scqdFilename)
-    wb.Windows(1).Visible = False
+    'wb.Windows(1).Visible = False
     ThisWorkbook.Activate
 
     Application.ScreenUpdating = False
@@ -144,10 +148,12 @@ Sub FB2(scqdFilename As String)
     SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
     ReplaceFormat:=False
     wb.Sheets("erp").Range("A1") = "1"
+    Dim endb
     endb = wb.Sheets("erp").[b60000].End(xlUp).Row
-    wb.Sheets("erp").Range("A1").AutoFill Destination := wb.Sheets("erp").Range("A1:A" & endb), Type:=xlFillSeries
+    wb.Sheets("erp").Range("A1").AutoFill Destination:=wb.Sheets("erp").Range("A1:A" & endb), Type:=xlFillSeries
    
     wb.Sheets("erp").Columns("H:H").NumberFormatLocal = "G/通用格式"
+    Dim i
     For i = 1 To endb
         If InStr(wb.Sheets("erp").Range("H" & i), "-N-") > 0 Then wb.Sheets("erp").Range("B" & i) = "转角"
         If InStr(wb.Sheets("erp").Range("H" & i), "ZW-Q-") > 0 Then wb.Sheets("erp").Range("B" & i) = "墙柱C槽"
@@ -155,11 +161,11 @@ Sub FB2(scqdFilename As String)
     '对现有内容进行排序
     With wb.Sheets("erp").Sort.SortFields
             .Clear
-        .Add Key := .Range("B2"), Order:=1 '模板名称
-        .Add Key := .Range("E2"), Order:=1 'W1
-        .Add Key := .Range("F2"), Order:=1 'W2
-        .Add Key := .Range("H2"), Order:=1 '图纸编号
-        .Add Key := .Range("G2"), Order:=1 'L
+        .Add Key:=.Range("B2"), Order:=1   '模板名称
+        .Add Key:=.Range("E2"), Order:=1   'W1
+        .Add Key:=.Range("F2"), Order:=1   'W2
+        .Add Key:=.Range("H2"), Order:=1   '图纸编号
+        .Add Key:=.Range("G2"), Order:=1   'L
     End With
     With wb.Sheets("erp").Sheets("erp").Sort
         .SetRange Range("b2:M" & endb)
@@ -170,9 +176,9 @@ Sub FB2(scqdFilename As String)
         .Apply
     End With
     For i = 1 To endb
-        wb.Sheets("erp").("L" & i) = wb.Sheets("erp").("G" & i) & ""  '做宽度连接
-        wb.Sheets("erp").("K" & i) = wb.Sheets("erp").("E" & i) & wb.Sheets("erp").("F" & i)  '做宽度连接
-        wb.Sheets("erp").("M" & i) = wb.Sheets("erp").("B" & i) & "&" & wb.Sheets("erp").("E" & i) & wb.Sheets("erp").("F" & i) & wb.Sheets("erp").("J" & i)
+        wb.Sheets("erp").Range("L" & i) = wb.Sheets("erp").Range("G" & i) & ""  '做宽度连接
+        wb.Sheets("erp").Range("K" & i) = wb.Sheets("erp").Range("E" & i) & wb.Sheets("erp").Range("F" & i)  '做宽度连接
+        wb.Sheets("erp").Range("M" & i) = wb.Sheets("erp").Range("B" & i) & "&" & wb.Sheets("erp").Range("E" & i) & wb.Sheets("erp").Range("F" & i) & wb.Sheets("erp").Range("J" & i)
     Next
     '宽度连接为数值
     wb.Sheets("erp").Range("E:G").Delete Shift:=xlToLeft '删除以前的两列宽度及单件面积和总面积列
@@ -183,10 +189,11 @@ Sub FB2(scqdFilename As String)
     wb.Sheets("erp").[k1] = 1
     wb.Sheets("erp").Range("K2").FormulaR1C1 = "=IF(RC[-1]<>R[-1]C[-1],R[-1]C+1,R[-1]C)"
     wb.Sheets("erp").Range("K2").AutoFill Destination:=wb.Sheets("erp").Range("K2:K" & endb)
+    Dim zhz
     zhz = wb.Sheets("erp").Range("K" & endb).Value
     
     wb.Sheets("erp").Columns("K:K") = wb.Sheets("erp").Columns("K:K").Value
-    
+    Dim jia
     For jia = 1 To zhz
         wb.Sheets("erp").Range("K" & endb + jia) = jia
     Next
@@ -209,21 +216,30 @@ Sub FB2(scqdFilename As String)
     wb.Sheets("erp").Columns("A:A").Cut
     wb.Sheets("erp").Columns("H:H").Insert Shift:=xlToRight
     '把型材截面号放到i列,定尺放到H列
+    Dim zjh
     zjh = wb.Sheets("erp").Range("A6000").End(xlUp).Row
     'Columns("C:C").Replace " ", ""
+    Dim xcki
+    Dim xch
+    Dim xck
+    Dim dingchi
+    Dim hangshu
+    Dim Slhj
+    Dim dys
+    Dim k, kk
     For xcki = 2 To zjh '表示型材宽度的计数
         xch = ""
         dingchi = ""
         If Len(wb.Sheets("erp").Range("C" & xcki)) <> 0 Then
             xck = wb.Sheets("erp").Cells(xcki, 3) '型材宽度
-            If wb.Sheets("库(待补充)").Columns(1).Find(xck, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+            If ThisWorkbook.Sheets("库(待补充)").Columns(1).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                 xch = "请输入型材"
                 dingchi = "输入定尺"
             Else
-                hangshu = wb.Sheets("库(待补充)").Columns(1).Find(xck, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
-                xch = wb.Sheets("库(待补充)").Range("B" & hangshu) '型材截面号
-                dingchi = wb.Sheets("库(待补充)").Range("C" & hangshu)
-            End I
+                hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(1).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+                xch = ThisWorkbook.Sheets("库(待补充)").Range("B" & hangshu) '型材截面号
+                dingchi = ThisWorkbook.Sheets("库(待补充)").Range("C" & hangshu)
+            End If
                 wb.Sheets("erp").Range("I" & xcki) = xch
                 wb.Sheets("erp").Range("J" & xcki) = dingchi
                 If xch = "请输入型材" Then
@@ -256,7 +272,7 @@ Sub FB2(scqdFilename As String)
     wb.Sheets("erp").Range("T1:T1").Value = "=RIGHT((MID(A1, FIND(""K"",A1)-4,4)),LEN((MID(A1, FIND(""K"",A1)-4,4)))-FIND(""-"",(MID(A1, FIND(""K"",A1)-4,4))))"
     ' wb.Sheets("erp").Range("T1:T6000").Select
     ' Selection.FillDown
-    wb.Sheets("erp").Range("T1").AutoFill Destination := wb.Sheets("erp").Range("T1:T" & endb), Type:=xlFillSeries
+    wb.Sheets("erp").Range("T1").AutoFill Destination:=wb.Sheets("erp").Range("T1:T" & endb), Type:=xlFillSeries
     Do While dys <= endb
         If wb.Sheets("erp").Range("B" & dys) > 0 Then
             k = k + wb.Sheets("erp").Range("B" & dys)
@@ -267,7 +283,7 @@ Sub FB2(scqdFilename As String)
         End If
         If k >= 50 And kk < 25 Then
             If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
-                wb.Sheets("erp").(dys).Insert
+                wb.Sheets("erp").Range(dys).Insert
                 k = 0
                 kk = 0
                 endb = endb + 1
@@ -276,8 +292,8 @@ Sub FB2(scqdFilename As String)
                 kk = 0
             End If
                 ElseIf k < 50 And kk >= 25 Then
-                If wb.Sheets("erp").("B" & dys - 1) > 0 Then
-                    wb.Sheets("erp").(dys).Insert
+                If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
+                    wb.Sheets("erp").Range(dys).Insert
                     k = 0
                     kk = 0
                     endb = endb + 1
@@ -286,8 +302,8 @@ Sub FB2(scqdFilename As String)
                 kk = 0
                 End If
                 ElseIf k >= 50 And kk >= 25 Then
-                If wb.Sheets("erp").("B" & dys - 1) > 0 Then
-                    wb.Sheets("erp").(dys).Insert
+                If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
+                    wb.Sheets("erp").Range(dys).Insert
                 k = 0
                 kk = 0
                 endb = endb + 1
@@ -302,8 +318,10 @@ Sub FB2(scqdFilename As String)
     wb.Sheets("erp").Columns("K:K").Insert Shift:=xlToRight
     wb.Sheets("erp").Columns("G:G").Insert Shift:=xlToRight
     wb.Sheets("erp").Columns("A:J").HorizontalAlignment = xlCenter
+    Dim enda
     enda = wb.Sheets("erp").Range("A6000").End(xlUp).Row
     '先用设计提供的模板名称进行判断
+    Dim XCHI, TZBH, MM
     For XCHI = 2 To enda '型材号计数i
         On Error Resume Next
         TZBH = wb.Sheets("erp").Range("H" & XCHI) '图纸编号
@@ -327,7 +345,7 @@ Sub FB2(scqdFilename As String)
                         '  Range("I" & XCHI) = "YK-P003"
                         wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
                     End If
-                End If       
+                End If
                 If wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3267" Then '200P
                     If 45 <= MM Or MM <= 155 Then
                         wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3267"
@@ -558,6 +576,7 @@ Sub FB2(scqdFilename As String)
             wb.Sheets("erp").Range("G" & XCHI) = "N1"
         'P区---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         ElseIf InStr(TZBH, "平面板") Or InStr(TZBH, "平板") Or InStr(TZBH, "普板") Or InStr(TZBH, "墙板") Or InStr(TZBH, "PK板") > 0 Or InStr(TZBH, "平面板切斜") > 0 Then '如果是平面板或平板或普板或楼梯墙板，则先需要判断型号是不是HLD-03或15，如果是则为L板，再判断是L1还是L2，如果不是l板则根据宽度判断，然后判断长度
+            Dim W1W2, l
             W1W2 = wb.Sheets("erp").Range("C" & XCHI)
             l = wb.Sheets("erp").Range("C" & XCHI)
             If wb.Sheets("erp").Range("I" & XCHI) = "HLD-03" Or wb.Sheets("erp").Range("I" & XCHI) = "HLD-15" Or InStr(wb.Sheets("erp").Range("I" & XCHI), "+") > 0 Or wb.Sheets("erp").Range("I" & XCHI) = "请输入型材" Then
@@ -754,6 +773,7 @@ Sub FB2(scqdFilename As String)
     '     :=False, Transpose:=False
     ' Application.CutCopyMode = False
     wb.Sheets("erp").Columns("R:R") = wb.Sheets("erp").Columns("R:R").Value
+    Dim endR
     endR = wb.Sheets("erp").[R6000].End(xlUp).Row
     wb.Sheets("erp").Range("R" & endR) = ""
     wb.Sheets("erp").Range("R" & endR - 1) = ""
@@ -818,3 +838,4 @@ Sub createExcel(fileFullPath As String)
     excelWB.SaveAs fileFullPath
     excelApp.Quit
 End Sub
+
