@@ -804,7 +804,10 @@ Sub FB3(scqdFilename As String)
     ThisWorkbook.Activate
 
     wb.Sheets("erp").Columns("A:A").Interior.Pattern = xlNone
-    enda = Range("A60000").End(xlUp).Row
+    Dim enda, dys
+    enda = wb.Sheets("erp").Range("A60000").End(xlUp).Row
+    Dim k, kk
+    Dim Remainder, lj
     For dys = 1 To enda '单页数，一个单子要放的数量
         If Len(wb.Sheets("erp").Range("B" & dys)) = 0 And Len(wb.Sheets("erp").Range("B" & dys + 1)) > 0 Then
             k = 0
@@ -821,11 +824,15 @@ Sub FB3(scqdFilename As String)
         MsgBox "还有超过单页25的生产单,调整后重新点击填充单号"
         Exit Sub
     End If
+    Dim mbmc
+    Dim a
+    Dim ih
     mbmc = ""
     wb.Sheets("erp").Range("A2:G" & enda).Borders.LineStyle = xlContinuous
     If Len(wb.Sheets("erp").Range("A1")) = 0 Then a = wb.Sheets("临时").Range("B3")
     wb.Sheets("erp").Range("A1") = a & "-" & wb.Sheets("erp").Range("K2") & "-1"
     k = 1
+    Dim fenqulast, fenqu
     For ih = 1 To enda
         If Len(wb.Sheets("erp").Range("A" & ih)) = 0 Then
             fenqulast = wb.Sheets("erp").Range("K" & ih - 1)
@@ -892,4 +899,6 @@ Sub createExcel(fileFullPath As String)
     excelWB.SaveAs fileFullPath
     excelApp.Quit
 End Sub
+
+
 
