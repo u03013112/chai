@@ -38,6 +38,11 @@ Sub testFB2()
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB2(scqdFilename)
 End Sub
+Sub testFB3()
+    Dim scqdFilename As String
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Call FB3(scqdFilename)
+End Sub
 
 ' 实际不再需要手选目标了，但是简单处理还是先分开
 ' fpqdFilename 配清单中的零件图，每一个都需要处理
@@ -283,7 +288,7 @@ Sub FB2(scqdFilename As String)
         End If
         If k >= 50 And kk < 25 Then
             If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
-                wb.Sheets("erp").Range(dys).Insert
+                wb.Sheets("erp").Rows(dys).Insert
                 k = 0
                 kk = 0
                 endb = endb + 1
@@ -291,19 +296,19 @@ Sub FB2(scqdFilename As String)
                 k = 0
                 kk = 0
             End If
-                ElseIf k < 50 And kk >= 25 Then
-                If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
-                    wb.Sheets("erp").Range(dys).Insert
-                    k = 0
-                    kk = 0
-                    endb = endb + 1
-                Else
-                    k = 0
+        ElseIf k < 50 And kk >= 25 Then
+            If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
+                wb.Sheets("erp").Rows(dys).Insert
+                k = 0
                 kk = 0
-                End If
-                ElseIf k >= 50 And kk >= 25 Then
-                If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
-                    wb.Sheets("erp").Range(dys).Insert
+                endb = endb + 1
+            Else
+                k = 0
+                kk = 0
+            End If
+        ElseIf k >= 50 And kk >= 25 Then
+            If wb.Sheets("erp").Range("B" & dys - 1) > 0 Then
+                wb.Sheets("erp").Rows(dys).Insert
                 k = 0
                 kk = 0
                 endb = endb + 1
@@ -791,7 +796,58 @@ Sub FB2(scqdFilename As String)
     wb.Close (True)
 End Sub
 
+' 填充单号
+Sub FB3(scqdFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(scqdFilename)
+    wb.Windows(1).Visible = False
+    ThisWorkbook.Activate
 
+    wb.Sheets("erp").Columns("A:A").Interior.Pattern = xlNone
+    enda = Range("A60000").End(xlUp).Row
+    For dys = 1 To enda '单页数，一个单子要放的数量
+        If Len(wb.Sheets("erp").Range("B" & dys)) = 0 And Len(wb.Sheets("erp").Range("B" & dys + 1)) > 0 Then
+            k = 0
+        Else
+            k = k + 1
+        End If
+        Remainder = k Mod 26  '余数
+        If k > 0 And Remainder = 0 Then
+            wb.Sheets("erp").Range("A" & dys - 1).Interior.Color = RGB(232, 159, 187)
+        lj = lj + 1 '累计次数
+        End If
+    Next
+    If lj > 0 Then
+        MsgBox "还有超过单页25的生产单,调整后重新点击填充单号"
+        Exit Sub
+    End If
+    mbmc = ""
+    wb.Sheets("erp").Range("A2:G" & enda).Borders.LineStyle = xlContinuous
+    If Len(wb.Sheets("erp").Range("A1")) = 0 Then a = wb.Sheets("临时").Range("B3")
+    wb.Sheets("erp").Range("A1") = a & "-" & wb.Sheets("erp").Range("K2") & "-1"
+    k = 1
+    For ih = 1 To enda
+        If Len(wb.Sheets("erp").Range("A" & ih)) = 0 Then
+            fenqulast = wb.Sheets("erp").Range("K" & ih - 1)
+            fenqu = wb.Sheets("erp").Range("K" & ih + 1)
+            If fenqu = fenqulast Then
+                k = k + 1
+                wb.Sheets("erp").Range("A" & ih) = a & "-" & fenqu & "-" & k
+            Else
+                k = 1
+                wb.Sheets("erp").Range("A" & ih) = a & "-" & fenqu & "-" & k
+            End If
+        End If
+    Next
+    wb.Sheets("erp").Columns("H:H").FormatConditions.Delete
+  '  MsgBox ("如果图号有5XC,5SC,请注意修改型材")
+  '  MsgBox ("如需修改型材，请直接在erp表修改,注意切斜模板")
+    wb.Windows(1).Visible = True
+    wb.Close (True)
+End Sub
+
+
+' copySheet效果很差，基本作废了，建议用excel自带的copy替代
 Private Sub copySheet(src As Worksheet, dst As Worksheet)
     Dim ur As Range
     Dim rowCount As Long
