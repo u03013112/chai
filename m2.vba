@@ -138,7 +138,7 @@ Sub FB2(scqdFilename As String)
     'wb.Windows(1).Visible = False
     ThisWorkbook.Activate
 
-    Application.ScreenUpdating = False
+    'Application.ScreenUpdating = False
     On Error Resume Next
     wb.Sheets("erp").Columns("C:C").Replace "（", "("
     wb.Sheets("erp").Columns("C:C").Replace "）", ")"
@@ -192,7 +192,7 @@ Sub FB2(scqdFilename As String)
     Dim zhz
     zhz = wb.Sheets("erp").Range("K" & endb).Value
     
-    wb.Sheets("erp").Columns("K:K") = wb.Sheets("erp").Columns("K:K").Value
+    wb.Sheets("erp").Range("K1:K" & endb) = wb.Sheets("erp").Range("K1:K" & endb).Value
     Dim jia
     For jia = 1 To zhz
         wb.Sheets("erp").Range("K" & endb + jia) = jia
@@ -772,17 +772,15 @@ Sub FB2(scqdFilename As String)
     ' Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
     '     :=False, Transpose:=False
     ' Application.CutCopyMode = False
-    wb.Sheets("erp").Columns("R:R") = wb.Sheets("erp").Columns("R:R").Value
-    Dim endR
-    endR = wb.Sheets("erp").[R6000].End(xlUp).Row
-    wb.Sheets("erp").Range("R" & endR) = ""
-    wb.Sheets("erp").Range("R" & endR - 1) = ""
-    wb.Sheets("erp").Range("R1") = "分区非大样图"
-    wb.Sheets("erp").Columns("Q:R").Replace "*白*", ""
-    ' wb.Sheets("erp").Columns("R:R").Cut
-    ' wb.Sheets("erp").Columns("P:P").Select
-    ' wb.Sheets("erp").Paste
-    wb.Sheets("erp").Columns("P:P") = wb.Sheets("erp").Columns("R:R").Value
+    Dim endr
+    endr = wb.Sheets("erp").[r60000].End(xlUp).Row
+    wb.Sheets("erp").Range("P1:P" & endr) = wb.Sheets("erp").Range("R1:R" & endr).Value
+    
+    wb.Sheets("erp").Range("P" & endr) = ""
+    wb.Sheets("erp").Range("P" & endr - 1) = ""
+    wb.Sheets("erp").Range("P1") = "分区非大样图"
+    wb.Sheets("erp").Columns("P:P").Replace "*白*", ""
+    
     wb.Sheets("erp").Columns("R:R").Delete
     
     wb.Sheets("erp").Columns("M:O").Delete Shift:=xlToLeft
