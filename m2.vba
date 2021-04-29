@@ -854,7 +854,7 @@ Sub FB3(scqdFilename As String)
 End Sub
 
 ' 转序单生产单
-Sub FB4(scqdFilename As String)
+Sub FB4(scqdFilename As String,sjkFilename As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(scqdFilename)
     'wb.Windows(1).Visible = False
@@ -1108,115 +1108,99 @@ Sub FB4(scqdFilename As String)
     
     wb.Sheets("erp库").Columns("F:F").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
     wb.Sheets("erp库").Columns("D:E").Delete
-    ActiveWindow.ScrollRow = 1
-    ' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    ' ActiveWindow.ScrollRow = 1 
+    wb.Sheets("erp库").ScrollRow = 1
     ' TODO: 上面还有一个函数没有搞，下面这个另存为暂时还没看懂，分不开
-    qcbm = Replace(ThisWorkbook.Name, "生产单.xlsm", "库数据")
+    ' qcbm = Replace(wb.Name, "生产单", "库数据")
     
-    Worksheets(Array("erp库")).Copy
-    ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & qcbm, FileFormat:=51
-    ActiveWorkbook.Close SaveChanges:=True
+    ' Worksheets(Array("erp库")).Copy
+    ' ActiveWorkbook.SaveAs FileName:=ThisWorkbook.path & "\" & qcbm, FileFormat:=51
+    ' ActiveWorkbook.Close SaveChanges:=True
     
+    If fileIsExist(sjkFilename) Then
+        Kill sjkFilename
+    End If
+    Call createExcel(sjkFilename)
+    Dim wbSjk As Workbook
+    Set wbSjk = Workbooks.Open(sjkFilename)
+    wbSjk.Windows(1).Visible = False
+    ThisWorkbook.Activate
+    If isSheetExist(wbSjk, "erp库") Then
+        wbSjk.Sheets("erp库").Delete
+    End If
+    wbSjk.Sheets.Add().Name = "erp库"
+    wb.Sheets("erp库").Cells.Copy wbSjk.Sheets("erp库").[A1]
+    wbSjk.Windows(1).Visible = True
+    wbSjk.Close(True)
+
     Application.DisplayAlerts = False
     
-    Sheets("erp库").Delete
+    wb.Sheets("erp库").Delete
     
     Application.DisplayAlerts = True
     
     '=======================================================================================
 
     
-    Sheets("ZXD").Activate
+    ' wb.Sheets("ZXD").Activate
     
-    zxdzh = Sheets("ZXD").Range("B65536").End(xlUp).Row
+    zxdzh = wb.Sheets("ZXD").Range("B65536").End(xlUp).Row
     
-    Columns("A:H").HorizontalAlignment = xlCenter
-    Sheets("ZXD").Range("B2").HorizontalAlignment = xlLeft
+    wb.Sheets("ZXD").Columns("A:H").HorizontalAlignment = xlCenter
+    wb.Sheets("ZXD").Range("B2").HorizontalAlignment = xlLeft
     
-    For xh = 4 To zxdzh
-        
-        v = Split(Range("B" & xh), "-")
-        XHZ = Right(Range("B" & xh), Len(v(UBound(v))))
-        
-        Range("A" & xh) = XHZ
-    
-    Next
-    
-    For xh = 4 To zxdzh
-        
-        If Range("A" & xh) = 1 Then
-             
-             JISHU1 = JISHU1 + 1
-        
+    For xh = 4 To zxdzh        
+        v = Split(wb.Sheets("ZXD").Range("B" & xh), "-")
+        XHZ = Right(wb.Sheets("ZXD").Range("B" & xh), Len(v(UBound(v))))        
+        wb.Sheets("ZXD").Range("A" & xh) = XHZ    
+    Next    
+    For xh = 4 To zxdzh        
+        If wb.Sheets("ZXD").Range("A" & xh) = 1 Then             
+            JISHU1 = JISHU1 + 1        
         End If
-    
     Next
     
-    If JISHU1 > 1 Then
-        
-        For crhj = 5 To zxdzh + (JISHU1 - 1) * 3 '插入合计
-            
-            If Range("A" & crhj) = "1" Then
-            
-                Rows(crhj & ":" & (crhj + 2)).Insert
-                crhj = crhj + 3
-            
-            End If
-        
+    If JISHU1 > 1 Then        
+        For crhj = 5 To zxdzh + (JISHU1 - 1) * 3 '插入合计            
+            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then            
+                wb.Sheets("ZXD").Rows(crhj & ":" & (crhj + 2)).Insert
+                crhj = crhj + 3            
+            End If        
+        Next        
+        crhj = ""        
+        zxdzh = wb.Sheets("ZXD").Range("B65536").End(xlUp).Row        
+        For crhj = 5 To zxdzh            
+            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then            
+                wb.Sheets("ZXD").Range("B" & (crhj - 2)) = "合计"
+                wb.Sheets("ZXD").Range("C" & (crhj - 2)) = Application.WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & (crhj - 3) & ": C" & ((crhj - 3) - HS + 2)))                
+                HS = 1            
+            Else            
+                HS = HS + 1            
+            End If        
         Next
         
-        crhj = ""
+        wb.Sheets("ZXD").Range("B" & zxdzh + 2) = "合计"
+        wb.Sheets("ZXD").Range("C" & zxdzh + 2) = Application.WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & zxdzh & ": C" & (zxdzh - HS + 1)))
         
-        zxdzh = Sheets("ZXD").Range("B65536").End(xlUp).Row
-        
-        For crhj = 5 To zxdzh
-            
-            If Range("A" & crhj) = "1" Then
-            
-                Range("B" & (crhj - 2)) = "合计"
-                Range("C" & (crhj - 2)) = Application.WorksheetFunction.Sum(Range("C" & (crhj - 3) & ": C" & ((crhj - 3) - HS + 2)))
-                
-                HS = 1
-            
-            Else
-            
-                HS = HS + 1
-            
-            End If
-        
-        Next
-        
-        Range("B" & zxdzh + 2) = "合计"
-        Range("C" & zxdzh + 2) = Application.WorksheetFunction.Sum(Range("C" & zxdzh & ": C" & (zxdzh - HS + 1)))
-        
-        i = "'"
-        
-        For i = 4 To zxdzh + 2
-            
-            If Range("B" & i) = "合计" Then
-                
-                Sheets("ZXD").HPageBreaks.Add Range("b" & i + 2)
-            
-            End If
-        
-        Next
-    
-    Else
-        
-        Range("B" & zxdzh + 2) = "合计"
-        Range("C" & zxdzh + 2) = WorksheetFunction.Sum(Range("C" & zxdzh & ": C4"))
-    
+        i = "'"        
+        For i = 4 To zxdzh + 2            
+            If wb.Sheets("ZXD").Range("B" & i) = "合计" Then                
+                wb.Sheets("ZXD").HPageBreaks.Add wb.Sheets("ZXD").Range("b" & i + 2)            
+            End If        
+        Next    
+    Else        
+        wb.Sheets("ZXD").Range("B" & zxdzh + 2) = "合计"
+        wb.Sheets("ZXD").Range("C" & zxdzh + 2) = WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & zxdzh & ": C4"))    
     End If
     
-    Range("A" & zxdzh + 1 & ":A" & (zxdzh + 100)).ClearContents
+    wb.Sheets("ZXD").Range("A" & zxdzh + 1 & ":A" & (zxdzh + 100)).ClearContents    
+    wb.Sheets("ZXD").PageSetup.PrintArea = "$A$1:$H$" & zxdzh + 2
+    wb.Sheets("ZXD").PageSetup.PrintTitleRows = "$1:$3"
+    wb.Sheets("ZXD").Range("A4:H" & zxdzh + 2).Borders.Weight = 2
+    'wb.Sheets("ZXD").Range("A4:H" & ZXDZH + 2).BorderAround , 3
+    wb.Sheets("ZXD").Rows("4:" & zxdzh + 2).RowHeight = 20
     
-    Sheets("ZXD").PageSetup.PrintArea = "$A$1:$H$" & zxdzh + 2
-    Sheets("ZXD").PageSetup.PrintTitleRows = "$1:$3"
-    Range("A4:H" & zxdzh + 2).Borders.Weight = 2
-    'Range("A4:H" & ZXDZH + 2).BorderAround , 3
-    Rows("4:" & zxdzh + 2).RowHeight = 20
-    
-    Columns("J:J").EntireColumn.AutoFit
+    wb.Sheets("ZXD").Columns("J:J").EntireColumn.AutoFit
     
     Application.ScreenUpdating = True
     
