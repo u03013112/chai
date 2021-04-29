@@ -981,7 +981,7 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
                 
             wb.Sheets("计算用表").[f1] = dingchi
                 
-            Call Z优化
+            Call ZYouHua
             
             If wb.Sheets("计算用表").[f21] = 0 Then                    
                 sht.[I4:K4] = 1                    
@@ -1207,6 +1207,191 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     MsgBox ("备料单中型材须拆分为一个单元格只有一种型材型号")
     wb.Windows(1).Visible = True
     wb.Close (True)
+End Sub
+
+Sub ZYouHua() '优化，感谢大神
+    '准备工作与转存数组
+    wb.Sheets("计算用表").Range("f12:f16,f21:f24").ClearContents
+    wb.Sheets("计算用表").Range("i2:i" & Rows.Count).ClearContents
+    wb.Sheets("计算用表").Range("k2:CH" & Rows.Count).ClearContents
+    Dim m%, n&, arr, i&, j&, k&, ylcd#, xlzd#, js&, gd#
+    ylcd = wb.Sheets("计算用表").Range("f1").Value '整料
+    xlzd = wb.Sheets("计算用表").Range("f3").Value '短料
+
+    m = wb.Sheets("计算用表").Range("f4").Value '种数
+    If m = 0 Then MsgBox "请输入下料长度与数量！", , "友情提示"
+    n = wb.Sheets("计算用表").Range("f5").Value '根数: Exit Sub
+    ReDim yssj#(1 To n), crr#(1 To m, 1 To 2) '原始数据
+    arr = wb.Sheets("计算用表").Range("b2:c100").Value
+    k = 0 '计数初始化
+    For i = 1 To 99 '排除arr中空值，形成crr数组
+        If arr(i, 1) <> "" And arr(i, 2) <> "" Then
+            k = k + 1
+            crr(k, 1) = arr(i, 1): crr(k, 2) = arr(i, 2)
+        End If
+    Next i
+    k = 0
+    For i = 1 To m '转存一维数组
+        For j = 1 To crr(i, 2)
+            k = k + 1
+            yssj(k) = crr(i, 1)
+        Next j
+    Next i
+
+    '排除整料与准整料（即余料小于短料）
+    ReDim jg11(1 To 1, 1 To m), jg12(1 To 1, 1 To m) '结果1
+    js = 0 '输出第一部分结果时的行数
+    For i = 1 To m
+        If crr(i, 1) > ylcd - xlzd Then
+            js = js + 1
+            jg11(1, js) = crr(i, 1)
+            jg12(1, js) = crr(i, 2)
+        End If
+    Next i
+    If js > 0 Then
+        ReDim Preserve jg11(1 To 1, 1 To js), jg12(1 To 1, 1 To js)
+        wb.Sheets("计算用表").Range("i2").Resize(js) = WorksheetFunction.Transpose(jg12) '输出根数
+        wb.Sheets("计算用表").Range("k2").Resize(js) = WorksheetFunction.Transpose(jg11) '输出规格
+    End If
+
+    '整理原始数据
+    Dim n1& '需搭配的下料根数
+    n1 = n - WorksheetFunction.Sum(jg12)
+    If n1 = 0 Then MsgBox "下料长度不能搭配，不需要优化！", , "友情提示": Exit Sub
+    ReDim SJ#(1 To n1), sj1#(1 To n1), sj2$(1 To n1), jg$(1 To n1)
+    k = 0
+    For i = 1 To n
+        If yssj(i) <= ylcd - xlzd Then
+            k = k + 1
+            SJ(k) = yssj(i) '排除整料和准整料后的原始数据
+            sj1(k) = yssj(i) '用于搭配求和
+        End If
+    Next i
+    wb.Sheets("计算用表").Range("f12") = WorksheetFunction.Max(SJ) '搭配料最长
+    wb.Sheets("计算用表").Range("f13") = WorksheetFunction.Min(SJ) '搭配料最短
+    wb.Sheets("计算用表").Range("f14") = m - js '搭配料种数
+    wb.Sheets("计算用表").Range("f15") = n1 '搭配料根数
+    wb.Sheets("计算用表").Range("f16") = WorksheetFunction.Sum(SJ) '搭配料总长
+    'If n1 = n Then
+    '    MsgBox "没有整料和准整料！" & Chr(10) & Chr(10) & "下面即将开始可以搭配下料的组合优化，请耐心等待！", , "友情提示"
+    'Else
+    '    MsgBox "不能搭配下料的整料和准整料已排除完毕！" & Chr(10) & Chr(10) & "下面即将开始可以搭配下料的组合优化，请耐心等待！", , "友情提示"
+    'End If
+
+    '需搭配的下料组合优化（★★★核心代码★★★）
+    Dim t#, pd As Boolean, yl#, minyl#, r&, h%, l%, brr, sxgs&
+    Dim ylgs&, minylgs&, ylfc#, ylfc1#, maxylfc#, sjcs&, ii&, i3&, sjxb&, dapaizhi# '随机次数、随机下标、搭配值
+    t = Timer
+    minyl = wb.Sheets("计算用表").Range("f16").Value '最小余料
+    sxgs = 0 '实现根数
+    minylgs = n1 '最小余料根数
+    maxylfc = 0 '最大余料方差
+    sjcs = wb.Sheets("计算用表").Range("f27").Value * 1000
+    Randomize
+    For ii = 1 To sjcs
+        For k = 1 To n1 - 1
+            If sj1(k) > 0 Then '跳过已搭配的料
+                dapaizhi = sj1(k) '当前搭配值
+                sj2(k) = sj1(k) '搭配组合连接初值
+100:
+                ReDim sj3#(1 To n1)
+                i3 = 0
+                For i = k + 1 To n1
+                    If sj1(i) > 0 And sj1(i) <= ylcd - dapaizhi Then '筛选出当前dapaizhi的可搭配料存入sj3，sj3的元素可变
+                        i3 = i3 + 1
+                        sj3(i3) = sj1(i)
+                    End If
+                Next i
+                If i3 > 0 Then '存在可搭配料时
+                    ReDim Preserve sj3#(1 To i3)
+                    sjxb = Int(Rnd() * i3) + 1 '★随机搭配可搭配的下料规格★
+                    dapaizhi = dapaizhi + sj3(sjxb)
+                    sj1(k) = dapaizhi
+                    sj2(k) = sj2(k) & "+" & sj3(sjxb)
+                    For i = k + 1 To n1
+                        If sj1(i) = sj3(sjxb) Then sj1(i) = 0: Exit For '已搭配料归0
+                    Next i
+                    GoTo 100
+                End If
+            End If
+        Next k
+        If sj1(n1) > 0 Then sj2(n1) = sj1(n1) '防止最后一个值未被搭配时遗漏
+        yl = 0: ylgs = 0: ylfc = 0
+        For i = 1 To n1
+            If sj1(i) <> 0 Then
+                yl = yl + (ylcd - sj1(i)) '计算余料
+                If sj1(i) < ylcd Then ylgs = ylgs + 1 '计算余料根数（搭配后小于整料长度）
+                ylfc = ylfc + (ylcd - sj1(i)) ^ 2 '计算余料方差
+            End If
+        Next i
+        If yl <= minyl And ylgs <= minylgs Then '记录相对较优方案：余料少、余料根数少
+            If ylfc > maxylfc Then '余料方差大
+                For i = 1 To n1 '结果出口1
+                    jg(i) = sj2(i)
+                Next i
+                ylfc1 = ylfc '用于正确输出结果
+                pd = True
+            End If
+            If ylgs < minylgs Then
+                For i = 1 To n1 '结果出口2
+                    jg(i) = sj2(i)
+                Next i
+                maxylfc = ylfc '★余料根数减少时重新记录最大余料方差★
+                pd = False
+            End If
+            minyl = yl: minylgs = ylgs
+        End If
+        Randomize
+        For i = 1 To n1 '利用【香川经典数组洗牌法】乱序恢复sj1数组数据，准备下一次随机搭配
+            r = Int(Rnd() * (n1 - i + 1)) + i
+            gd = SJ(r): SJ(r) = SJ(i): SJ(i) = gd
+            sj1(i) = SJ(i): sj2(i) = ""
+        Next i
+    Next ii
+
+    '
+    ''输出结果至工作表
+    wb.Sheets("计算用表").Range("f22").Value = minyl
+    wb.Sheets("计算用表").Range("f23").Value = minylgs: If minylgs = 0 Then minylgs = 1
+    wb.Sheets("计算用表").Range("f24").Value = Format(Sqr(IIf(pd, ylfc1, maxylfc)) / minylgs, "0.00")
+    ReDim jgjs(1 To n1) '结果计数
+    For i = 1 To n1 '对结果字串中连接的下料规格做从大到小排序处理
+        If jg(i) <> "" Then
+            brr = Split(jg(i), "+")
+            For j = 0 To UBound(brr) - 1
+                For k = j + 1 To UBound(brr)
+                    If Val(brr(j)) < Val(brr(k)) Then gd = brr(k): brr(k) = brr(j): brr(j) = gd
+                Next k
+            Next j
+            jg(i) = ""
+            For j = 0 To UBound(brr)
+                jg(i) = jg(i) & "+" & brr(j)
+            Next j
+        End If
+    Next i
+    For i = 1 To n1 - 1 '去重并计数
+        If jg(i) <> "" Then
+            For j = i + 1 To n1
+                If jg(j) = jg(i) Then jgjs(i) = jgjs(i) + 1: jg(j) = ""
+            Next j
+        End If
+    Next i
+    h = js + 3 '行
+    For i = 1 To n1
+        If jg(i) <> "" Then
+            Cells(h, "i").Value = jgjs(i) + 1
+            sxgs = sxgs + jgjs(i) + 1
+            brr = Split(jg(i), "+")
+            l = 11 'K列
+            For j = 1 To UBound(brr)
+                Cells(h, l).Value = brr(j)
+                l = l + 1
+            Next j
+            h = h + 1
+        End If
+    Next i
+    wb.Sheets("计算用表").Range("f21").Value = sxgs
+    ''MsgBox "用时：" & Format(Timer - t, "0.0000") & "秒。", , "友情提示"
 End Sub
 
 
