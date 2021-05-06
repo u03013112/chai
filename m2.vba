@@ -216,7 +216,7 @@ Sub FB2(scqdFilename As String)
     SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
     xlSortTextAsNumbers
     With wb.Sheets("erp").Sort
-        .SetRange Range("A1:k" & endb + zhz)
+        .SetRange wb.Sheets("erp").Range("A1:k" & endb + zhz)
         .Header = 2
         .MatchCase = False
         .Orientation = xlTopToBottom
