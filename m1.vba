@@ -84,7 +84,7 @@ Sub chose1()
         
         Dim hbqdWb As Workbook
         Set hbqdWb = Workbooks.Open(hbqdFilename)
-        hbqdWb.Windows(1).Visible = False
+        hbqdWb.Windows(1).Visible = True
         ThisWorkbook.Activate
         ' 拆分步骤，每一步都相对独立
         Call HbqdStep1(hbqdFilename, excelFilenames)
@@ -96,14 +96,14 @@ Sub chose1()
         Exit Sub
     Else
         Exit Sub
-    End If    
+    End If
     MsgBox "拆分完毕"
 End Sub
 
 Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
     ThisWorkbook.Activate
 
     wb.Sheets.Add().Name = "设计非标件清单"
@@ -142,7 +142,7 @@ End Sub
 Sub HbqdStep2(hbqdFilename As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
     ThisWorkbook.Activate
 
     Dim endb As Integer
@@ -360,7 +360,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
     Dim czgzbm '记录工作表名
     
     Set wb = Workbooks.Open(filename) '打开表格
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
     wb_name = Split(wb.FullName, "\")(UBound(Split(wb.FullName, "\")))
     '区域附加
     If InStr(wb_name, "孔") = 0 And InStr(wb_name, "标准板") + InStr(wb_name, "标准件") > 0 Then
@@ -669,7 +669,7 @@ End Function
 Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
     ThisWorkbook.Activate
     Dim a As Long
     Dim title_arr
@@ -683,12 +683,12 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
-        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" Then
-            wb.Sheets("打包分区编号汇总").Range("B"&c2) = wb.Sheets("设计打包清单").Range("B"&c1).Value
-            wb.Sheets("打包分区编号汇总").Range("C"&c2) = wb.Sheets("设计打包清单").Range("C"&c1).Value
-            wb.Sheets("打包分区编号汇总").Range("D"&c2) = wb.Sheets("设计打包清单").Range("D"&c1).Value
-            wb.Sheets("打包分区编号汇总").Range("E"&c2) = wb.Sheets("设计打包清单").Range("E"&c1).Value
-            wb.Sheets("打包分区编号汇总").Range("F"&c2) = wb.Sheets("设计打包清单").Range("K"&c1).Value
+        If wb.Sheets("设计打包清单").Cells(c1, 5) <> "标准件" And wb.Sheets("设计打包清单").Cells(c1, 5) <> "生产清单中没有" Then
+            wb.Sheets("打包分区编号汇总").Range("B" & c2) = wb.Sheets("设计打包清单").Range("B" & c1).Value
+            wb.Sheets("打包分区编号汇总").Range("C" & c2) = wb.Sheets("设计打包清单").Range("C" & c1).Value
+            wb.Sheets("打包分区编号汇总").Range("D" & c2) = wb.Sheets("设计打包清单").Range("D" & c1).Value
+            wb.Sheets("打包分区编号汇总").Range("E" & c2) = wb.Sheets("设计打包清单").Range("E" & c1).Value
+            wb.Sheets("打包分区编号汇总").Range("F" & c2) = wb.Sheets("设计打包清单").Range("K" & c1).Value
             c2 = c2 + 1
         End If
     Next c1
@@ -714,7 +714,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     
     Dim dbfqhzWb As Workbook
     Set dbfqhzWb = Workbooks.Open(dbfqhzFilename)
-    dbfqhzWb.Windows(1).Visible = False
+    dbfqhzWb.Windows(1).Visible = True
     ThisWorkbook.Activate
     dbfqhzWb.Sheets.Add().Name = "打包分区编号汇总"
     Call copySheet(wb.Sheets("打包分区编号汇总"), dbfqhzWb.Sheets("打包分区编号汇总"))
@@ -731,8 +731,8 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
-        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "" Then
-            wb.Sheets("非标不带配件").Range("A"&c2&":M"&c2) = wb.Sheets("设计打包清单").Range("A"&c1&":M"&c1).Value
+        If wb.Sheets("设计打包清单").Cells(c1, 5) <> "标准件" And wb.Sheets("设计打包清单").Cells(c1, 5) <> "生产清单中没有" And wb.Sheets("设计打包清单").Cells(c1, 11) = "" Then
+            wb.Sheets("非标不带配件").Range("A" & c2 & ":M" & c2) = wb.Sheets("设计打包清单").Range("A" & c1 & ":M" & c1).Value
             c2 = c2 + 1
         End If
     Next c1
@@ -781,17 +781,17 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     End With
     '对现有内容进行排序
     With wb.Sheets("非标不带配件").Sort.SortFields
-            .Clear
-        .Add Key:=Range("K2"), Order:=1 '生产单类型
-        .Add Key:=Range("B2"), Order:=1 '模板名称
-        .Add Key:=Range("E2"), Order:=1 'W1
-        .Add Key:=Range("F2"), Order:=1 'W2
-        .Add Key:=Range("H2"), Order:=1 '图纸编号
-        .Add Key:=Range("J2"), Order:=1 '辅助列
+        .Clear
+        .Add Key:=wb.Sheets("非标不带配件").Range("K2"), Order:=1  '生产单类型
+        .Add Key:=wb.Sheets("非标不带配件").Range("B2"), Order:=1  '模板名称
+        .Add Key:=wb.Sheets("非标不带配件").Range("E2"), Order:=1  'W1
+        .Add Key:=wb.Sheets("非标不带配件").Range("F2"), Order:=1  'W2
+        .Add Key:=wb.Sheets("非标不带配件").Range("H2"), Order:=1  '图纸编号
+        .Add Key:=wb.Sheets("非标不带配件").Range("J2"), Order:=1  '辅助列
     End With
 
     With wb.Sheets("非标不带配件").Sort
-            .SetRange Range("b2:L" & endb)
+        .SetRange wb.Sheets("非标不带配件").Range("b2:L" & endb)
         .Header = 2 '没有标题
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -825,8 +825,8 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
-        If wb.Sheets("设计打包清单").Cells(c1,5) <> "标准件" and wb.Sheets("设计打包清单").Cells(c1,5) <> "生产清单中没有" and wb.Sheets("设计打包清单").Cells(c1,11) = "带配件" Then
-            wb.Sheets("非标带配件").Range("A"&c2&":M"&c2) = wb.Sheets("设计打包清单").Range("A"&c1&":M"&c1).Value
+        If wb.Sheets("设计打包清单").Cells(c1, 5) <> "标准件" And wb.Sheets("设计打包清单").Cells(c1, 5) <> "生产清单中没有" And wb.Sheets("设计打包清单").Cells(c1, 11) = "带配件" Then
+            wb.Sheets("非标带配件").Range("A" & c2 & ":M" & c2) = wb.Sheets("设计打包清单").Range("A" & c1 & ":M" & c1).Value
             c2 = c2 + 1
         End If
     Next c1
@@ -875,15 +875,15 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
      '对现有内容进行排序
     With wb.Sheets("非标带配件").Sort.SortFields
         .Clear
-        .Add Key:=Range("B2"), Order:=1 '模板名称
-        .Add Key:=Range("E2"), Order:=1 'W1
-        .Add Key:=Range("F2"), Order:=1 'W2
-        .Add Key:=Range("H2"), Order:=1 '辅助列
-        .Add Key:=Range("K2"), Order:=1 '辅助列
+        .Add Key:=wb.Sheets("非标带配件").Range("B2"), Order:=1  '模板名称
+        .Add Key:=wb.Sheets("非标带配件").Range("E2"), Order:=1  'W1
+        .Add Key:=wb.Sheets("非标带配件").Range("F2"), Order:=1  'W2
+        .Add Key:=wb.Sheets("非标带配件").Range("H2"), Order:=1  '辅助列
+        .Add Key:=wb.Sheets("非标带配件").Range("K2"), Order:=1  '辅助列
     End With
 
     With wb.Sheets("非标带配件").Sort
-        .SetRange Range("b2:K" & endb)
+        .SetRange wb.Sheets("非标带配件").Range("b2:K" & endb)
         .Header = 2 '没有标题
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -939,12 +939,12 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标不带配件").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
     Dim end_O As Integer
-    end_O = wb.Sheets("非标不带配件").Cells(65535, 18).End(xlUp).Row
+    end_O = wb.Sheets("非标不带配件").Cells(65535, 15).End(xlUp).Row
 
-    wb.Sheets("非标不带配件").Range("R"&end_O&":T"&end_O) = wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Value
+    wb.Sheets("非标不带配件").Range("R" & end_O & ":T" & end_O) = wb.Sheets("非标不带配件").Range("O" & end_O & ":Q" & end_O).Value
     ' 这里由于不能覆盖写入，原有的O列改为R列
     
-    wb.Sheets("非标不带配件").Range("R" & end_O-1 & ": T" & end_O-1).ClearContents
+    wb.Sheets("非标不带配件").Range("R" & end_O - 1 & ": T" & end_O - 1).ClearContents
     ' wb.Sheets("非标不带配件").Range("O"&end_O&":Q"&end_O).Delete Shift:=xlLeft
     wb.Sheets("非标不带配件").Range("O:Q").Delete Shift:=xlLeft
 
@@ -974,23 +974,23 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         False, False, False, False, False, False, False, False, False, False, False)
     wb.Sheets("非标带配件").PivotTables("数据透视表2").RepeatAllLabels xlRepeatLabels
     
-    end_O = wb.Sheets("非标带配件").Cells(65535, 18).End(xlUp).Row
-    wb.Sheets("非标带配件").Range("R"&end_O&":T"& end_O) = wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Value
-    wb.Sheets("非标带配件").Range("R" & end_O -1 & ": T" & end_O -1).ClearContents
+    end_O = wb.Sheets("非标带配件").Cells(65535, 15).End(xlUp).Row
+    wb.Sheets("非标带配件").Range("R" & end_O & ":T" & end_O) = wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Value
+    wb.Sheets("非标带配件").Range("R" & end_O - 1 & ": T" & end_O - 1).ClearContents
     ' wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Delete Shift:=xlLeft
     wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
     Call Log("main", "D12", "《非标带配件》处理完成")
     wb.Windows(1).Visible = True
-    wb.Close (True)    
+    wb.Close (True)
 End Sub
 
 
 
 ' 拆分到工作簿 :
-Private Sub Cfdgzb(hbqdFilename As String,fpqdDirname As String)
+Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
-    wb.Windows(1).Visible = False
+    wb.Windows(1).Visible = True
     ThisWorkbook.Activate
 
     Dim ary(), arr, brr, sh As Worksheet, d As Object, k, t, a, i&, j&, m&, l&
@@ -1019,7 +1019,7 @@ Private Sub Cfdgzb(hbqdFilename As String,fpqdDirname As String)
             k = d.Keys
             t = d.Items
             brr = ws.[A1].Resize(65536, UBound(arr, 2))
-            For i = 0 To d.Count - 1
+            For i = 0 To d.count - 1
                 m = 1
                 a = Split(t(i), ",")
                 For j = 1 To UBound(a)
@@ -1035,7 +1035,7 @@ Private Sub Cfdgzb(hbqdFilename As String,fpqdDirname As String)
                         .Borders.LineStyle = xlContinuous
                         .EntireColumn.AutoFit
                     End With
-                    .SaveAs FileName:= path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    .SaveAs filename:=path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
                     .Close
                     heji = 0
                 End With
@@ -1053,3 +1053,6 @@ Private Sub Cfdgzb(hbqdFilename As String,fpqdDirname As String)
     wb.Windows(1).Visible = True
     wb.Close (True)
 End Sub
+
+
+
