@@ -43,6 +43,13 @@ Sub testFB3()
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB3(scqdFilename)
 End Sub
+Sub testFB4()
+    Dim scqdFilename As String
+    Dim sjkFilename As String
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    sjkFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-数据库.xlsx"
+    Call FB4(scqdFilename, sjkFilename)
+End Sub
 
 ' 实际不再需要手选目标了，但是简单处理还是先分开
 ' fpqdFilename 配清单中的零件图，每一个都需要处理
@@ -854,7 +861,7 @@ Sub FB3(scqdFilename As String)
 End Sub
 
 ' 转序单生产单
-Sub FB4(scqdFilename As String,sjkFilename As String)
+Sub FB4(scqdFilename As String, sjkFilename As String)
     Dim wb As Workbook
     Set wb = Workbooks.Open(scqdFilename)
     'wb.Windows(1).Visible = False
@@ -872,15 +879,17 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     wb.Sheets("erp").Columns("B:C").Insert
     wb.Sheets("erp").Columns("H:H").Insert
     
+    Dim wz
+    Dim jsp
     wz = Mid(wb.Sheets("erp").Cells(1, 1), 1, 4)
     
     For p = 1 To zhs '合并图纸编号单元格，以方便放入转序单
         If Mid(wb.Sheets("erp").Cells(p, 1), 1, 4) = wz Then
             jsp = jsp + 1 '计数p
-        Else            
+        Else
             wb.Sheets("erp").Cells(p, 1).Resize(, 3).Merge
-            wb.Sheets("erp").Cells(p, 7).Resize(, 2).Merge        
-        End If    
+            wb.Sheets("erp").Cells(p, 7).Resize(, 2).Merge
+        End If
     Next
     
     ' Sheet5.Activate
@@ -897,12 +906,21 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     
     '=======================================================================================
     ' 原本在下面循环里的代码，复制之前做，提高效率
-    For Each pic In wb.Sheets("临时").Pictures        
+    Dim pic
+    For Each pic In wb.Sheets("临时").Pictures
         pic.Left = (pic.TopLeftCell.Width - pic.Width) / 2 + 2.3 * pic.TopLeftCell.Left
-        pic.Top = (pic.TopLeftCell.Height - pic.Height) / 2 + 1.05 * pic.TopLeftCell.Top        
+        pic.Top = (pic.TopLeftCell.Height - pic.Height) / 2 + 1.05 * pic.TopLeftCell.Top
     Next
 
-    For zjb = 1 To jsp - 1 '增加表        
+    Dim sht
+    For Each sht In wb.Worksheets
+        If InStr(sht.Name, "临时表") > 0 Then
+            sht.Delete
+        End If
+    Next
+
+    Dim zjb
+    For zjb = 1 To jsp - 1 '增加表
         ' Sheet5.Select
         ' Sheet5.Copy Before:=Sheets("erp")
         wb.Sheets.Add(before:=wb.Sheets("erp")).Name = "临时表" & zjb
@@ -913,26 +931,26 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     
     wb.Sheets("erp").Range("A1:H" & zhs).Borders.LineStyle = xlContinuous  '合并居中加边框
     
-    For i1 = 1 To zhs + jsp * 2        
-        If Mid(wb.Sheets("erp").Cells(i1, 1), 1, 4) = wz Then            
+    For i1 = 1 To zhs + jsp * 2
+        If Mid(wb.Sheets("erp").Cells(i1, 1), 1, 4) = wz Then
             wb.Sheets("erp").Rows(i1).Insert
-            wb.Sheets("erp").Rows(i1 + 2).Insert            
-            i1 = i1 + 1        
-        End If    
+            wb.Sheets("erp").Rows(i1 + 2).Insert
+            i1 = i1 + 1
+        End If
     Next
     
     Dim bs As Long
-    Dim sht As Worksheet
+    Dim r, xck, mbmc, Quyu, xch, dingchi
     bs = 1
-    For jch = 1 To zhs + jsp * 2 '加插入行的总行数    
-        On Error Resume Next        
-        If Mid(wb.Sheets("erp").Cells(jch, 1), 1, 4) = wz Then            
-            Set sht = wb.Sheets("erp").Sheets("临时表" & bs)
+    For jch = 1 To zhs + jsp * 2 '加插入行的总行数
+        On Error Resume Next
+        If Mid(wb.Sheets("erp").Cells(jch, 1), 1, 4) = wz Then
+            Set sht = wb.Sheets("临时表" & bs)
             bs = bs + 1
-            r = wb.Sheets("erp").Cells(jch + 2, 1).CurrentRegion.Rows.Count '连续区域的行数
+            r = wb.Sheets("erp").Cells(jch + 2, 1).CurrentRegion.Rows.count '连续区域的行数
             'c = wb.Sheets("erp").Cells(jch + 2, 1).CurrentRegion.Columns.Count '连续区域的列数，然并卵
             xck = wb.Sheets("erp").Cells(jch + 2, 5) '型材宽度
-            mbmc = wb.Sheets("erp").Cells(jch + 2, 1).Text '模板名称            
+            mbmc = wb.Sheets("erp").Cells(jch + 2, 1).Text '模板名称
             wb.Sheets("erp").Cells(jch, 1).Copy sht.[B3:E3] '转序单号复制
             
             '=======================================================================================
@@ -945,10 +963,10 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
                 aaa = .Range("B3")
                 .Range("B3") = "=code128(""" & aaa & """,B3,,230,)"
                 .Range("B3") = aaa
-                .Range("B3").Font.ColorIndex = 2                
+                .Range("B3").Font.ColorIndex = 2
             End With
             
-            ' Sheets("erp").Activate            
+            ' Sheets("erp").Activate
             '=======================================================================================
 
             
@@ -974,22 +992,22 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
             
             ' Sheets("erp").Activate
                 
-            wb.Sheets("erp").Cells(jch + 2, 4).Resize(r, 1).Copy wb.Sheets("计算用表").[C2]
+            wb.Sheets("erp").Cells(jch + 2, 4).Resize(r, 1).Copy wb.Sheets("计算用表").[c2]
             wb.Sheets("erp").Cells(jch + 2, 6).Resize(r, 1).Copy wb.Sheets("计算用表").[B2]
             
             ' Sheets("计算用表").Activate
                 
             wb.Sheets("计算用表").[f1] = dingchi
                 
-            Call ZYouHua
+            Call ZYouHua(wb)
             
-            If wb.Sheets("计算用表").[f21] = 0 Then                    
-                sht.[I4:K4] = 1                    
-            Else                
-                wb.Sheets("计算用表").[f21].Copy sht.[I4：K4]                
+            If wb.Sheets("计算用表").[f21] = 0 Then
+                sht.[I4:K4] = 1
+            Else
+                wb.Sheets("计算用表").[f21].Copy sht.[I4：K4]
             End If
                 
-            ' Sheets("erp").Activate        
+            ' Sheets("erp").Activate
         End If
     Next
 
@@ -997,7 +1015,7 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
 
     Dim xh As Long
     xh = 0
-    For PE = 1 To wb.Sheets.Count    
+    For PE = 1 To wb.Sheets.count
         ' If InStr(Sheets(PE).[A1], "模板") > 0 Then
         If InStr(wb.Sheets(PE).Name, "临时表") > 0 Then
             xh = xh + 1
@@ -1015,9 +1033,9 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
                 wb.Sheets("ZXD").Cells(xh + 3, 3) = ""
                 wb.Sheets("ZXD").Cells(xh + 3, 10) = ""
                 wb.Sheets("ZXD").Cells(xh + 3, 11) = ""
-                wb.Sheets("ZXD").Cells(xh + 3, 12) = ""        
-            End If    
-        End If    
+                wb.Sheets("ZXD").Cells(xh + 3, 12) = ""
+            End If
+        End If
     Next
    
     ' wb.Sheets("erp").Activate
@@ -1046,14 +1064,14 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     
     ' Sheets("erp库").Activate
     
-    enderp = wb.Sheets("erp库").Range("B65536").End(xlUp).Row   
-    For t = 1 To enderp    
-        If Len(wb.Sheets("erp库").Range("B" & t)) = 0 Then        
-            scdh = wb.Sheets("erp库").Range("A" & t)            
-        Else            
+    enderp = wb.Sheets("erp库").Range("B65536").End(xlUp).Row
+    For t = 1 To enderp
+        If Len(wb.Sheets("erp库").Range("B" & t)) = 0 Then
+            scdh = wb.Sheets("erp库").Range("A" & t)
+        Else
             wb.Sheets("erp库").Range("L" & t) = scdh
-            wb.Sheets("erp库").Range("M" & t) = scdh & wb.Sheets("erp库").Range("K" & t) & wb.Sheets("erp库").Range("G" & t)            
-        End If        
+            wb.Sheets("erp库").Range("M" & t) = scdh & wb.Sheets("erp库").Range("K" & t) & wb.Sheets("erp库").Range("G" & t)
+        End If
     Next t
     
     wb.Sheets("erp库").Columns("B:B").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
@@ -1077,38 +1095,38 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     wb.Sheets("erp库").Range("A1:F" & enderp).HorizontalAlignment = xlCenter
     wb.Sheets("erp库").Range("A1:F" & enderp).Borders.LineStyle = xlContinuous
     
-    With wb.Sheets("erp库").Sort.SortFields    
+    With wb.Sheets("erp库").Sort.SortFields
         .Clear
         .Add Key:=wb.Sheets("erp库").Range("A2"), Order:=1
         .Add Key:=wb.Sheets("erp库").Range("B2"), Order:=1
-        .Add Key:=wb.Sheets("erp库").Range("C2"), Order:=1        
+        .Add Key:=wb.Sheets("erp库").Range("C2"), Order:=1
     End With
     
-    With wb.Sheets("erp库").Sort    
+    With wb.Sheets("erp库").Sort
         .SetRange wb.Sheets("erp库").Range("A2:E" & enderp)
         .Header = 2
         .MatchCase = False
         .Orientation = xlTopToBottom
         .SortMethod = xlPinYin
-        .Apply        
+        .Apply
     End With
     
     erpfzl = wb.Sheets("erp库").Range("E2")
     erpjs = 0
     
-    For t = 2 To enderp + 1    
-        If wb.Sheets("erp库").Range("E" & t) <> erpfzl Then            
-            wb.Sheets("erp库").Range("F" & t - 1) = erpjs            
+    For t = 2 To enderp + 1
+        If wb.Sheets("erp库").Range("E" & t) <> erpfzl Then
+            wb.Sheets("erp库").Range("F" & t - 1) = erpjs
             erpfzl = wb.Sheets("erp库").Range("E" & t)
-            erpjs = wb.Sheets("erp库").Range("D" & t)            
-        Else        
-            erpjs = erpjs + wb.Sheets("erp库").Range("D" & t)            
-        End If        
+            erpjs = wb.Sheets("erp库").Range("D" & t)
+        Else
+            erpjs = erpjs + wb.Sheets("erp库").Range("D" & t)
+        End If
     Next t
     
     wb.Sheets("erp库").Columns("F:F").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
     wb.Sheets("erp库").Columns("D:E").Delete
-    ' ActiveWindow.ScrollRow = 1 
+    ' ActiveWindow.ScrollRow = 1
     wb.Sheets("erp库").ScrollRow = 1
     ' TODO: 上面还有一个函数没有搞，下面这个另存为暂时还没看懂，分不开
     ' qcbm = Replace(wb.Name, "生产单", "库数据")
@@ -1131,7 +1149,7 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     wbSjk.Sheets.Add().Name = "erp库"
     wb.Sheets("erp库").Cells.Copy wbSjk.Sheets("erp库").[A1]
     wbSjk.Windows(1).Visible = True
-    wbSjk.Close(True)
+    wbSjk.Close (True)
 
     Application.DisplayAlerts = False
     
@@ -1143,57 +1161,58 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
 
     
     ' wb.Sheets("ZXD").Activate
+    Dim zxdzh
     
     zxdzh = wb.Sheets("ZXD").Range("B65536").End(xlUp).Row
     
     wb.Sheets("ZXD").Columns("A:H").HorizontalAlignment = xlCenter
     wb.Sheets("ZXD").Range("B2").HorizontalAlignment = xlLeft
-    
-    For xh = 4 To zxdzh        
+    Dim v, XHZ, JISHU1, crhj, HS
+    For xh = 4 To zxdzh
         v = Split(wb.Sheets("ZXD").Range("B" & xh), "-")
-        XHZ = Right(wb.Sheets("ZXD").Range("B" & xh), Len(v(UBound(v))))        
-        wb.Sheets("ZXD").Range("A" & xh) = XHZ    
-    Next    
-    For xh = 4 To zxdzh        
-        If wb.Sheets("ZXD").Range("A" & xh) = 1 Then             
-            JISHU1 = JISHU1 + 1        
+        XHZ = Right(wb.Sheets("ZXD").Range("B" & xh), Len(v(UBound(v))))
+        wb.Sheets("ZXD").Range("A" & xh) = XHZ
+    Next
+    For xh = 4 To zxdzh
+        If wb.Sheets("ZXD").Range("A" & xh) = 1 Then
+            JISHU1 = JISHU1 + 1
         End If
     Next
     
-    If JISHU1 > 1 Then        
-        For crhj = 5 To zxdzh + (JISHU1 - 1) * 3 '插入合计            
-            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then            
+    If JISHU1 > 1 Then
+        For crhj = 5 To zxdzh + (JISHU1 - 1) * 3 '插入合计
+            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then
                 wb.Sheets("ZXD").Rows(crhj & ":" & (crhj + 2)).Insert
-                crhj = crhj + 3            
-            End If        
-        Next        
-        crhj = ""        
-        zxdzh = wb.Sheets("ZXD").Range("B65536").End(xlUp).Row        
-        For crhj = 5 To zxdzh            
-            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then            
+                crhj = crhj + 3
+            End If
+        Next
+        crhj = ""
+        zxdzh = wb.Sheets("ZXD").Range("B65536").End(xlUp).Row
+        For crhj = 5 To zxdzh
+            If wb.Sheets("ZXD").Range("A" & crhj) = "1" Then
                 wb.Sheets("ZXD").Range("B" & (crhj - 2)) = "合计"
-                wb.Sheets("ZXD").Range("C" & (crhj - 2)) = Application.WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & (crhj - 3) & ": C" & ((crhj - 3) - HS + 2)))                
-                HS = 1            
-            Else            
-                HS = HS + 1            
-            End If        
+                wb.Sheets("ZXD").Range("C" & (crhj - 2)) = Application.WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & (crhj - 3) & ": C" & ((crhj - 3) - HS + 2)))
+                HS = 1
+            Else
+                HS = HS + 1
+            End If
         Next
         
         wb.Sheets("ZXD").Range("B" & zxdzh + 2) = "合计"
         wb.Sheets("ZXD").Range("C" & zxdzh + 2) = Application.WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & zxdzh & ": C" & (zxdzh - HS + 1)))
-        
-        i = "'"        
-        For i = 4 To zxdzh + 2            
-            If wb.Sheets("ZXD").Range("B" & i) = "合计" Then                
-                wb.Sheets("ZXD").HPageBreaks.Add wb.Sheets("ZXD").Range("b" & i + 2)            
-            End If        
-        Next    
-    Else        
+        Dim i
+        i = "'"
+        For i = 4 To zxdzh + 2
+            If wb.Sheets("ZXD").Range("B" & i) = "合计" Then
+                wb.Sheets("ZXD").HPageBreaks.Add wb.Sheets("ZXD").Range("b" & i + 2)
+            End If
+        Next
+    Else
         wb.Sheets("ZXD").Range("B" & zxdzh + 2) = "合计"
-        wb.Sheets("ZXD").Range("C" & zxdzh + 2) = WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & zxdzh & ": C4"))    
+        wb.Sheets("ZXD").Range("C" & zxdzh + 2) = WorksheetFunction.Sum(wb.Sheets("ZXD").Range("C" & zxdzh & ": C4"))
     End If
     
-    wb.Sheets("ZXD").Range("A" & zxdzh + 1 & ":A" & (zxdzh + 100)).ClearContents    
+    wb.Sheets("ZXD").Range("A" & zxdzh + 1 & ":A" & (zxdzh + 100)).ClearContents
     wb.Sheets("ZXD").PageSetup.PrintArea = "$A$1:$H$" & zxdzh + 2
     wb.Sheets("ZXD").PageSetup.PrintTitleRows = "$1:$3"
     wb.Sheets("ZXD").Range("A4:H" & zxdzh + 2).Borders.Weight = 2
@@ -1209,11 +1228,11 @@ Sub FB4(scqdFilename As String,sjkFilename As String)
     wb.Close (True)
 End Sub
 
-Sub ZYouHua() '优化，感谢大神
+Sub ZYouHua(wb As Workbook) '优化，感谢大神
     '准备工作与转存数组
     wb.Sheets("计算用表").Range("f12:f16,f21:f24").ClearContents
-    wb.Sheets("计算用表").Range("i2:i" & Rows.Count).ClearContents
-    wb.Sheets("计算用表").Range("k2:CH" & Rows.Count).ClearContents
+    wb.Sheets("计算用表").Range("i2:i" & Rows.count).ClearContents
+    wb.Sheets("计算用表").Range("k2:CH" & Rows.count).ClearContents
     Dim m%, n&, arr, i&, j&, k&, ylcd#, xlzd#, js&, gd#
     ylcd = wb.Sheets("计算用表").Range("f1").Value '整料
     xlzd = wb.Sheets("计算用表").Range("f3").Value '短料
@@ -1440,6 +1459,10 @@ Sub createExcel(fileFullPath As String)
     excelWB.SaveAs fileFullPath
     excelApp.Quit
 End Sub
+
+
+
+
 
 
 
