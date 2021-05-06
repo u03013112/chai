@@ -749,7 +749,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
         endb = .Cells(65535, 2).End(xlUp).Row
         For i = 2 To endb
-            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+            If InStr(.Range("B" & i), "C槽") + InStr(.Range("B" & i), "转角") > 0 Then
                 If .Range("F" & i) = 100 Then
                     W2_num = .Range("E" & i)
                     .Range("E" & i) = 100
@@ -764,7 +764,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
                 End If
-            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+            ElseIf InStr(.Range("B" & i), "角铝") > 0 And Len(.Range("F" & i)) > 0 Then
                 If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
                     W2_num = .Range("E" & i)
                     .Range("E" & i) = 65
@@ -842,7 +842,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         .[A1].Resize(1, UBound(title_arr) + 1) = title_arr
         endb = .Cells(65535, 2).End(xlUp).Row
         For i = 2 To endb
-            If InStr(Range("B" & i), "C槽") + InStr(Range("B" & i), "转角") > 0 Then
+            If InStr(.Range("B" & i), "C槽") + InStr(.Range("B" & i), "转角") > 0 Then
                 If .Range("F" & i) = 100 Then
                     W2_num = .Range("E" & i)
                     .Range("E" & i) = 100
@@ -857,7 +857,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
                     .Range("E" & i) = W1_num
                     .Range("F" & i) = W2_num
                 End If
-            ElseIf InStr(Range("B" & i), "角铝") > 0 And Len(Range("F" & i)) > 0 Then
+            ElseIf InStr(.Range("B" & i), "角铝") > 0 And Len(.Range("F" & i)) > 0 Then
                 If .Range("F" & i) = 65 And .Range("E" & i) <> 65 Then
                     W2_num = .Range("E" & i)
                     .Range("E" & i) = 65
