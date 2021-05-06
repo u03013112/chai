@@ -922,7 +922,7 @@ Sub FB4(scqdFilename As String, sjkFilename As String)
     Next
 
     Dim zjb
-    For zjb = 1 To jsp - 1 '增加表
+    For zjb = 1 To jsp '增加表，原有逻辑少加了一张表，为的是 临时 也可以使用
         ' Sheet5.Select
         ' Sheet5.Copy Before:=Sheets("erp")
         wb.Sheets.Add(before:=wb.Sheets("erp")).Name = "临时表" & zjb
