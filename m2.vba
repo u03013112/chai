@@ -29,7 +29,9 @@ End Sub
 Sub testFB1()
     Dim fpqdFilename As String
     Dim scqdFilename As String
-    fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
+    ' fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
+    fpqdFilename = "C:\Users\u03013112\Documents\002\C-494.xlsx"
+    
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB1(fpqdFilename, scqdFilename)
 End Sub
@@ -173,14 +175,14 @@ Sub FB2(scqdFilename As String)
     '对现有内容进行排序
     With wb.Sheets("erp").Sort.SortFields
             .Clear
-        .Add Key:=.Range("B2"), Order:=1   '模板名称
-        .Add Key:=.Range("E2"), Order:=1   'W1
-        .Add Key:=.Range("F2"), Order:=1   'W2
-        .Add Key:=.Range("H2"), Order:=1   '图纸编号
-        .Add Key:=.Range("G2"), Order:=1   'L
+        .Add Key:=wb.Sheets("erp").Range("B2"), Order:=1   '模板名称
+        .Add Key:=wb.Sheets("erp").Range("E2"), Order:=1   'W1
+        .Add Key:=wb.Sheets("erp").Range("F2"), Order:=1   'W2
+        .Add Key:=wb.Sheets("erp").Range("H2"), Order:=1   '图纸编号
+        .Add Key:=wb.Sheets("erp").Range("G2"), Order:=1   'L
     End With
-    With wb.Sheets("erp").Sheets("erp").Sort
-        .SetRange Range("b2:M" & endb)
+    With wb.Sheets("erp").Sort
+        .SetRange wb.Sheets("erp").Range("b2:M" & endb)
         .Header = 2 '没有标题
         .MatchCase = False
         .Orientation = xlTopToBottom
