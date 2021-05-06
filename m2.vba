@@ -1415,6 +1415,105 @@ Sub ZYouHua(wb As Workbook) '优化，感谢大神
     ''MsgBox "用时：" & Format(Timer - t, "0.0000") & "秒。", , "友情提示"
 End Sub
 
+' 生成ERP
+Sub FB5(scqdFilename As String)
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(scqdFilename)
+    'wb.Windows(1).Visible = False
+    ' ThisWorkbook.Activate
+
+    Application.ScreenUpdating = False
+    ' wb.Sheets("erp").Activate
+    ENDC = wb.Sheets("erp").[C65536].End(xlUp).Row '对C列的最后一行进行定位，在拆分明细的库里找一下C列的宽度，如果没有就显示宽度为红色
+    For i = 2 To ENDC
+        If Len(wb.Sheets("erp").Range("C" & i)) > 0 Then
+            xck = wb.Sheets("erp").Cells(i, 3) '型材宽度
+            If wb.Sheets("erp").Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+                wb.Sheets("erp").Range("C" & i).Interior.Color = RGB(230, 100, 100) '
+                k = k + 1 '如果K大于零，则需要在库里加新的拆分明细表
+            End If
+        End If
+    Next
+    
+    If k > 0 Then
+        MsgBox ("需在库中添加明细后，重新生成erp")
+        GoTo 100
+    End If
+    
+    If isSheetExist(wb, "拆分明细") Then
+        wb.Sheets("拆分明细").Delete
+    End If
+    wb.Sheets.Add().Name = "拆分明细"
+    wb.Sheets("erp").Cells.Copy wb.Sheets("拆分明细").[A1]
+    
+    wb.Sheets("拆分明细").Columns("E:M").Delete
+    
+    wb.Sheets("拆分明细").Columns("b:b").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    wb.Sheets("拆分明细").Range("A1:D" & wb.Sheets("拆分明细").UsedRange.Rows.Count).Borders.LineStyle = xlContinuous
+    For BKTOP = 1 To wb.Sheets("拆分明细").UsedRange.Rows.Count '设置行的上边框
+        wb.Sheets("拆分明细").Range("A" & BKTOP & ":D" & BKTOP).Borders(xlEdgeTop).Weight = xlMedium
+    Next BKTOP
+
+'    Columns("A:A").Replace What:=" ", Replacement:=""
+    wb.Sheets("拆分明细").Columns("D:E").Insert
+    For i = 1 To wb.Sheets("拆分明细").UsedRange.Rows.Count * 10
+        On Error Resume Next
+        kuandu = wb.Sheets("拆分明细").Cells(i, 3)
+        If kuandu = "" Then
+            Exit For
+        End If
+        hangshu = wb.Sheets("库(待补充)").Columns(6).Find(kuandu, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+        ' wb.Sheets("库(待补充)").Activate
+        ' wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Select
+        ' r = Selection.Rows.Count
+        r = wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Rows.Count
+        ' Sheets("拆分明细").Activate
+        wb.Sheets("拆分明细").Rows(i + 1 & ":" & i + r).Insert
+        m = m + 1
+        wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(r, 12).Copy wb.Sheets("拆分明细").Cells(i + 1, 1)
+        wb.Sheets("拆分明细").Cells(i, 3).ClearContents
+        ' Range("A" & i & ":F" & i).Copy
+        ' Range("B" & i + 1).PasteSpecial SkipBlanks:=True
+        wb.Sheets("拆分明细").Range("B" & i + 1) = wb.Sheets("拆分明细").Range("A" & i & ":F" & i).Value
+        wb.Sheets("拆分明细").Rows(i).ClearContents
+        wb.Sheets("拆分明细").Cells(i + 1, 1) = m
+        i = i + r
+    Next i
+    
+    ' Columns("F:F").Select
+    ' Selection.Copy
+    ' Selection.PasteSpecial Paste:=xlPasteValues
+    
+    wb.Sheets("拆分明细").Columns("F:F") = wb.Sheets("拆分明细").Columns("F:F").Value
+
+    wb.Sheets("拆分明细").Columns("F:F").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+
+    For j = wb.Sheets("拆分明细").UsedRange.Rows.Count To 1 Step -1
+        If wb.Sheets("拆分明细").Cells(j, 6).Text = "" Then
+            wb.Sheets("拆分明细").Rows(j).EntireRow.Delete
+        End If
+    Next j
+
+    wb.Sheets("拆分明细").Rows("1:1").Insert
+    arr = Array("序号", "模板编号", "数量", "图纸名称", "型材截面", "材质", "长度", "数量", "总数量", "理论重量", "总重kg", "型材类型")
+    wb.Sheets("拆分明细").[A1].Resize(1, UBound(arr) + 1) = arr
+    '设置表头的格式
+    With wb.Sheets("拆分明细").Range("A1:L1")
+        .HorizontalAlignment = xlCenter
+        .Borders.Weight = 2
+        .BorderAround , 3
+    End With
+    '设置宽度自适应，然后调整比较窄的列，列宽为8
+    wb.Sheets("拆分明细").Columns("A:L").EntireColumn.AutoFit
+    wb.Sheets("拆分明细").Range("A:A,C:C,H:H,I:I").ColumnWidth = 8
+    
+    wb.Sheets("拆分明细").Rows("1:1").RowHeight = 25
+    Call FBG如果修改明细重新算配件
+100:
+    Application.ScreenUpdating = True
+    wb.Windows(1).Visible = True
+    wb.Close (True)
+End Sub
 
 ' copySheet效果很差，基本作废了，建议用excel自带的copy替代
 Private Sub copySheet(src As Worksheet, dst As Worksheet)
