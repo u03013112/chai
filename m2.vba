@@ -29,8 +29,8 @@ End Sub
 Sub testFB1()
     Dim fpqdFilename As String
     Dim scqdFilename As String
-    ' fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
-    fpqdFilename = "C:\Users\u03013112\Documents\002\C-494.xlsx"
+    fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
+    ' fpqdFilename = "C:\Users\u03013112\Documents\002\C-494.xlsx"
     
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB1(fpqdFilename, scqdFilename)
@@ -51,6 +51,11 @@ Sub testFB4()
     scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     sjkFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-数据库.xlsx"
     Call FB4(scqdFilename, sjkFilename)
+End Sub
+Sub testFB5()
+    Dim scqdFilename As String
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Call FB5(scqdFilename)
 End Sub
 
 ' 实际不再需要手选目标了，但是简单处理还是先分开
@@ -1424,11 +1429,13 @@ Sub FB5(scqdFilename As String)
 
     Application.ScreenUpdating = False
     ' wb.Sheets("erp").Activate
-    ENDC = wb.Sheets("erp").[C65536].End(xlUp).Row '对C列的最后一行进行定位，在拆分明细的库里找一下C列的宽度，如果没有就显示宽度为红色
-    For i = 2 To ENDC
+    Dim endc
+    endc = wb.Sheets("erp").[C65536].End(xlUp).Row '对C列的最后一行进行定位，在拆分明细的库里找一下C列的宽度，如果没有就显示宽度为红色
+    Dim i, xck, k
+    For i = 2 To endc
         If Len(wb.Sheets("erp").Range("C" & i)) > 0 Then
             xck = wb.Sheets("erp").Cells(i, 3) '型材宽度
-            If wb.Sheets("erp").Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+            If wb.Sheets("erp").Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                 wb.Sheets("erp").Range("C" & i).Interior.Color = RGB(230, 100, 100) '
                 k = k + 1 '如果K大于零，则需要在库里加新的拆分明细表
             End If
@@ -1449,28 +1456,30 @@ Sub FB5(scqdFilename As String)
     wb.Sheets("拆分明细").Columns("E:M").Delete
     
     wb.Sheets("拆分明细").Columns("b:b").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
-    wb.Sheets("拆分明细").Range("A1:D" & wb.Sheets("拆分明细").UsedRange.Rows.Count).Borders.LineStyle = xlContinuous
-    For BKTOP = 1 To wb.Sheets("拆分明细").UsedRange.Rows.Count '设置行的上边框
+    wb.Sheets("拆分明细").Range("A1:D" & wb.Sheets("拆分明细").UsedRange.Rows.count).Borders.LineStyle = xlContinuous
+    Dim BKTOP
+    For BKTOP = 1 To wb.Sheets("拆分明细").UsedRange.Rows.count '设置行的上边框
         wb.Sheets("拆分明细").Range("A" & BKTOP & ":D" & BKTOP).Borders(xlEdgeTop).Weight = xlMedium
     Next BKTOP
 
 '    Columns("A:A").Replace What:=" ", Replacement:=""
     wb.Sheets("拆分明细").Columns("D:E").Insert
-    For i = 1 To wb.Sheets("拆分明细").UsedRange.Rows.Count * 10
+    Dim kuandu, hangshu, r, m
+    For i = 1 To wb.Sheets("拆分明细").UsedRange.Rows.count * 10
         On Error Resume Next
         kuandu = wb.Sheets("拆分明细").Cells(i, 3)
         If kuandu = "" Then
             Exit For
         End If
-        hangshu = wb.Sheets("库(待补充)").Columns(6).Find(kuandu, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
-        ' wb.Sheets("库(待补充)").Activate
-        ' wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Select
+        hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(6).Find(kuandu, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+        ' ThisWorkbook.Sheets("库(待补充)").Activate
+        ' ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Select
         ' r = Selection.Rows.Count
-        r = wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Rows.Count
+        r = ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Rows.count
         ' Sheets("拆分明细").Activate
         wb.Sheets("拆分明细").Rows(i + 1 & ":" & i + r).Insert
         m = m + 1
-        wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(r, 12).Copy wb.Sheets("拆分明细").Cells(i + 1, 1)
+        ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(r, 12).Copy wb.Sheets("拆分明细").Cells(i + 1, 1)
         wb.Sheets("拆分明细").Cells(i, 3).ClearContents
         ' Range("A" & i & ":F" & i).Copy
         ' Range("B" & i + 1).PasteSpecial SkipBlanks:=True
@@ -1487,13 +1496,13 @@ Sub FB5(scqdFilename As String)
     wb.Sheets("拆分明细").Columns("F:F") = wb.Sheets("拆分明细").Columns("F:F").Value
 
     wb.Sheets("拆分明细").Columns("F:F").SpecialCells(xlCellTypeBlanks).EntireRow.Delete
-
-    For j = wb.Sheets("拆分明细").UsedRange.Rows.Count To 1 Step -1
+    Dim j
+    For j = wb.Sheets("拆分明细").UsedRange.Rows.count To 1 Step -1
         If wb.Sheets("拆分明细").Cells(j, 6).Text = "" Then
             wb.Sheets("拆分明细").Rows(j).EntireRow.Delete
         End If
     Next j
-
+    Dim arr
     wb.Sheets("拆分明细").Rows("1:1").Insert
     arr = Array("序号", "模板编号", "数量", "图纸名称", "型材截面", "材质", "长度", "数量", "总数量", "理论重量", "总重kg", "型材类型")
     wb.Sheets("拆分明细").[A1].Resize(1, UBound(arr) + 1) = arr
@@ -1569,14 +1578,14 @@ Sub FB6(wb As Workbook)
     wb.Sheets("拆分明细").Columns("R:R").SpecialCells(xlCellTypeBlanks).Delete Shift:=xlUp
     wb.Sheets("拆分明细").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
     
-    endR = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
-    For i = 2 To endR
+    endr = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    For i = 2 To endr
         xcjm = wb.Sheets("拆分明细").Range("r" & i) '型材截面
-        If wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+        If ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
             dingchi = "6000"
         Else
-            hangshu = wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
-            dingchi = wb.Sheets("库(待补充)").Range("C" & hangshu)
+            hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+            dingchi = ThisWorkbook.Sheets("库(待补充)").Range("C" & hangshu)
         End If
         wb.Sheets("拆分明细").Range("s" & i) = dingchi
         
@@ -1587,15 +1596,15 @@ Sub FB6(wb As Workbook)
    
     wb.Sheets("计算用表").Range("B2:C100").ClearContents
     wb.Sheets("拆分明细").Activate
-    endN = wb.Sheets("拆分明细").Range("N5000").End(xlUp).Row
-    endR = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
-    For i = 2 To endR
+    endn = wb.Sheets("拆分明细").Range("N5000").End(xlUp).Row
+    endr = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    For i = 2 To endr
         ' wb.Sheets("拆分明细").Activate
         py = wb.Sheets("拆分明细").Range("T" & i) '偏移起始单元格
-        If i < endR Then
+        If i < endr Then
             pyfw = wb.Sheets("拆分明细").Range("T" & (i + 1)) - wb.Sheets("拆分明细").Range("T" & i)
         Else
-            pyfw = endN + 1 - wb.Sheets("拆分明细").Range("T" & i)
+            pyfw = endn + 1 - wb.Sheets("拆分明细").Range("T" & i)
         End If
         
         wb.Sheets("拆分明细").Range("O" & py).Resize(pyfw, 2).Copy wb.Sheets("计算用表").[B2]
@@ -1614,12 +1623,12 @@ Sub FB6(wb As Workbook)
     wb.Sheets("拆分明细").Columns("T:T").Delete
     wb.Sheets("拆分明细").Columns("N:P").Delete
     
-    With wb.Sheets("拆分明细").Range("O1:Q" & endR)
+    With wb.Sheets("拆分明细").Range("O1:Q" & endr)
         .HorizontalAlignment = xlCenter
         .Borders.Weight = 2
     End With
     wb.Sheets("拆分明细").Columns("O:O").EntireColumn.AutoFit
-    For i = 2 To endR
+    For i = 2 To endr
         If InStr(wb.Sheets("拆分明细").Range("O" & i).Text, "板材") > 0 Then
             wb.Sheets("拆分明细").Range("O" & i).Interior.Color = RGB(230, 100, 100)
             bcsl = bcsl + 1
@@ -1674,10 +1683,3 @@ Sub createExcel(fileFullPath As String)
     excelWB.SaveAs fileFullPath
     excelApp.Quit
 End Sub
-
-
-
-
-
-
-
