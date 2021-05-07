@@ -1435,7 +1435,7 @@ Sub FB5(scqdFilename As String)
     For i = 2 To endc
         If Len(wb.Sheets("erp").Range("C" & i)) > 0 Then
             xck = wb.Sheets("erp").Cells(i, 3) '型材宽度
-            If wb.Sheets("erp").Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+            If ThisWorkbook.Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
                 wb.Sheets("erp").Range("C" & i).Interior.Color = RGB(230, 100, 100) '
                 k = k + 1 '如果K大于零，则需要在库里加新的拆分明细表
             End If
@@ -1475,7 +1475,7 @@ Sub FB5(scqdFilename As String)
         ' ThisWorkbook.Sheets("库(待补充)").Activate
         ' ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Select
         ' r = Selection.Rows.Count
-        r = ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Rows.count
+        r = ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).MergeArea.Cells.Rows.count
         ' Sheets("拆分明细").Activate
         wb.Sheets("拆分明细").Rows(i + 1 & ":" & i + r).Insert
         m = m + 1
@@ -1569,7 +1569,7 @@ Sub FB6(wb As Workbook)
     '对型材截面进行粘贴为值，对应库找到型材对应的定尺，然后用计算用表获取支数
     ' Columns("N:N").Copy
     ' Columns("R:R").PasteSpecial Paste:=xlPasteValues
-    Dim endn
+    Dim endn, endr, i
     endn = wb.Sheets("拆分明细").Range("N65535").End(xlUp).Row
     wb.Sheets("拆分明细").Range("R1:R" & endn) = wb.Sheets("拆分明细").Range("N1:N" & endn).Value
 
@@ -1579,17 +1579,18 @@ Sub FB6(wb As Workbook)
     wb.Sheets("拆分明细").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
     
     endr = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    Dim xcjm, dingchi, hangshu, hangshumin
     For i = 2 To endr
         xcjm = wb.Sheets("拆分明细").Range("r" & i) '型材截面
-        If ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+        If ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
             dingchi = "6000"
         Else
-            hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+            hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
             dingchi = ThisWorkbook.Sheets("库(待补充)").Range("C" & hangshu)
         End If
         wb.Sheets("拆分明细").Range("s" & i) = dingchi
         
-        hangshumin = Columns("N:N").Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+        hangshumin = Columns("N:N").Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
         wb.Sheets("拆分明细").Range("T" & i) = hangshumin
     Next
     wb.Sheets("拆分明细").Range("s1") = "定尺"
@@ -1598,6 +1599,7 @@ Sub FB6(wb As Workbook)
     wb.Sheets("拆分明细").Activate
     endn = wb.Sheets("拆分明细").Range("N5000").End(xlUp).Row
     endr = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    Dim py, pyfw
     For i = 2 To endr
         ' wb.Sheets("拆分明细").Activate
         py = wb.Sheets("拆分明细").Range("T" & i) '偏移起始单元格
@@ -1628,6 +1630,7 @@ Sub FB6(wb As Workbook)
         .Borders.Weight = 2
     End With
     wb.Sheets("拆分明细").Columns("O:O").EntireColumn.AutoFit
+    Dim bcsl
     For i = 2 To endr
         If InStr(wb.Sheets("拆分明细").Range("O" & i).Text, "板材") > 0 Then
             wb.Sheets("拆分明细").Range("O" & i).Interior.Color = RGB(230, 100, 100)
