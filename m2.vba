@@ -1508,11 +1508,125 @@ Sub FB5(scqdFilename As String)
     wb.Sheets("拆分明细").Range("A:A,C:C,H:H,I:I").ColumnWidth = 8
     
     wb.Sheets("拆分明细").Rows("1:1").RowHeight = 25
-    Call FBG如果修改明细重新算配件
+    Call FB6(wb)
 100:
     Application.ScreenUpdating = True
     wb.Windows(1).Visible = True
     wb.Close (True)
+End Sub
+
+' 如果修改明细重新算配件
+Sub FB6(wb As Workbook)
+    ' wb.Sheets("拆分明细").Activate
+    Application.ScreenUpdating = False
+    
+    ' wb.Sheets("拆分明细").Columns("E:L").Select
+    wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        wb.Sheets("拆分明细").Range("E1:L65535"), Version:=xlPivotTableVersion14).CreatePivotTable _
+        TableDestination:=wb.Sheets("拆分明细").Range("N1"), TableName:="数据透视表1", DefaultVersion:= _
+        xlPivotTableVersion14
+    With wb.Sheets("拆分明细").PivotTables("数据透视表1").PivotFields("型材类型")
+        .Orientation = xlPageField
+        .Position = 1
+    End With
+    With wb.Sheets("拆分明细").PivotTables("数据透视表1").PivotFields("型材截面")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With wb.Sheets("拆分明细").PivotTables("数据透视表1").PivotFields("长度")
+        .Orientation = xlRowField
+        .Position = 2
+    End With
+    wb.Sheets("拆分明细").PivotTables("数据透视表1").AddDataField wb.Sheets("拆分明细").PivotTables("数据透视表1" _
+        ).PivotFields("总数量"), "总计数量", xlSum
+        
+    wb.Sheets("拆分明细").PivotTables("数据透视表1").RowAxisLayout xlTabularRow
+'    wb.Sheets("拆分明细").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
+    Dim p As PivotField
+    For Each p In wb.Sheets("拆分明细").PivotTables("数据透视表1").PivotFields
+        p.Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    Next
+        
+    With wb.Sheets("拆分明细").PivotTables("数据透视表1").PivotFields("型材类型")
+        .PivotItems("").Visible = False
+'        .PivotItems("主板").Visible = False
+        .PivotItems("(blank)").Visible = False
+    End With
+    '对行和列禁用汇总
+    With wb.Sheets("拆分明细").PivotTables("数据透视表1")
+        .ColumnGrand = False
+        .RowGrand = False
+    End With
+    '对型材截面进行粘贴为值，对应库找到型材对应的定尺，然后用计算用表获取支数
+    ' Columns("N:N").Copy
+    ' Columns("R:R").PasteSpecial Paste:=xlPasteValues
+    Dim endn
+    endn = wb.Sheets("拆分明细").Range("N65535").End(xlUp).Row
+    wb.Sheets("拆分明细").Range("R1:R" & endn) = wb.Sheets("拆分明细").Range("N1:N" & endn).Value
+
+    wb.Sheets("拆分明细").Range("r1") = ""
+    wb.Sheets("拆分明细").Range("r3") = "配件型材截面"
+    wb.Sheets("拆分明细").Columns("R:R").SpecialCells(xlCellTypeBlanks).Delete Shift:=xlUp
+    wb.Sheets("拆分明细").PivotTables("数据透视表1").RepeatAllLabels xlRepeatLabels
+    
+    endR = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    For i = 2 To endR
+        xcjm = wb.Sheets("拆分明细").Range("r" & i) '型材截面
+        If wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious) Is Nothing Then
+            dingchi = "6000"
+        Else
+            hangshu = wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+            dingchi = wb.Sheets("库(待补充)").Range("C" & hangshu)
+        End If
+        wb.Sheets("拆分明细").Range("s" & i) = dingchi
+        
+        hangshumin = Columns("N:N").Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlprerious).Row
+        wb.Sheets("拆分明细").Range("T" & i) = hangshumin
+    Next
+    wb.Sheets("拆分明细").Range("s1") = "定尺"
+   
+    wb.Sheets("计算用表").Range("B2:C100").ClearContents
+    wb.Sheets("拆分明细").Activate
+    endN = wb.Sheets("拆分明细").Range("N5000").End(xlUp).Row
+    endR = wb.Sheets("拆分明细").Range("R5000").End(xlUp).Row
+    For i = 2 To endR
+        ' wb.Sheets("拆分明细").Activate
+        py = wb.Sheets("拆分明细").Range("T" & i) '偏移起始单元格
+        If i < endR Then
+            pyfw = wb.Sheets("拆分明细").Range("T" & (i + 1)) - wb.Sheets("拆分明细").Range("T" & i)
+        Else
+            pyfw = endN + 1 - wb.Sheets("拆分明细").Range("T" & i)
+        End If
+        
+        wb.Sheets("拆分明细").Range("O" & py).Resize(pyfw, 2).Copy wb.Sheets("计算用表").[B2]
+        wb.Sheets("计算用表").[f1] = wb.Sheets("拆分明细").Range("S" & i)
+        wb.Sheets("计算用表").Activate
+        Call ZYouHua(wb)
+        If wb.Sheets("计算用表").[f21] = 0 Then
+            wb.Sheets("拆分明细").Range("U" & i) = 1
+        Else
+            wb.Sheets("计算用表").[f21].Copy wb.Sheets("拆分明细").Range("U" & i)
+        End If
+        wb.Sheets("计算用表").Range("B2:C100").ClearContents
+    Next
+    ' wb.Sheets("拆分明细").Activate
+    wb.Sheets("拆分明细").Range("U1") = "支数"
+    wb.Sheets("拆分明细").Columns("T:T").Delete
+    wb.Sheets("拆分明细").Columns("N:P").Delete
+    
+    With wb.Sheets("拆分明细").Range("O1:Q" & endR)
+        .HorizontalAlignment = xlCenter
+        .Borders.Weight = 2
+    End With
+    wb.Sheets("拆分明细").Columns("O:O").EntireColumn.AutoFit
+    For i = 2 To endR
+        If InStr(wb.Sheets("拆分明细").Range("O" & i).Text, "板材") > 0 Then
+            wb.Sheets("拆分明细").Range("O" & i).Interior.Color = RGB(230, 100, 100)
+            bcsl = bcsl + 1
+        End If
+    Next
+    If bcsl > 0 Then MsgBox ("辅料用到板材，将数量按照面积换算成小数")
+    Application.ScreenUpdating = True
 End Sub
 
 ' copySheet效果很差，基本作废了，建议用excel自带的copy替代
