@@ -1465,25 +1465,34 @@ Sub FB5(scqdFilename As String)
 '    Columns("A:A").Replace What:=" ", Replacement:=""
     wb.Sheets("拆分明细").Columns("D:E").Insert
     Dim kuandu, hangshu, r, m
+    ' 把 库(待补充) 拷贝过来，看看是否可以增加效率
+    If isSheetExist(wb, "库(待补充)") Then
+        wb.Sheets("库(待补充)").Delete
+    End If
+    wb.Sheets.Add().Name = "库(待补充)"
+    ThisWorkbook.Sheets("库(待补充)").Cells.Copy wb.Sheets("库(待补充)").[A1]
+
     For i = 1 To wb.Sheets("拆分明细").UsedRange.Rows.count * 10
         On Error Resume Next
         kuandu = wb.Sheets("拆分明细").Cells(i, 3)
         If kuandu = "" Then
             Exit For
         End If
-        hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(6).Find(kuandu, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+        hangshu = wb.Sheets("库(待补充)").Columns(6).Find(kuandu, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
         ' ThisWorkbook.Sheets("库(待补充)").Activate
         ' ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(, 12).Select
         ' r = Selection.Rows.Count
-        r = ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).MergeArea.Cells.Rows.count
+        r = wb.Sheets("库(待补充)").Range("F" & hangshu).MergeArea.Cells.Rows.count
         ' Sheets("拆分明细").Activate
         wb.Sheets("拆分明细").Rows(i + 1 & ":" & i + r).Insert
         m = m + 1
-        ThisWorkbook.Sheets("库(待补充)").Range("F" & hangshu).Resize(r, 12).Copy wb.Sheets("拆分明细").Cells(i + 1, 1)
+        wb.Sheets("库(待补充)").Range("F" & hangshu).Resize(r, 12).Copy wb.Sheets("拆分明细").Cells(i + 1, 1)
         wb.Sheets("拆分明细").Cells(i, 3).ClearContents
         ' Range("A" & i & ":F" & i).Copy
         ' Range("B" & i + 1).PasteSpecial SkipBlanks:=True
-        wb.Sheets("拆分明细").Range("B" & i + 1) = wb.Sheets("拆分明细").Range("A" & i & ":F" & i).Value
+        wb.Sheets("拆分明细").Range("B" & i + 1) = wb.Sheets("拆分明细").Range("A" & i).Value
+        wb.Sheets("拆分明细").Range("C" & i + 1) = wb.Sheets("拆分明细").Range("B" & i).Value
+        wb.Sheets("拆分明细").Range("G" & i + 1) = wb.Sheets("拆分明细").Range("F" & i).Value
         wb.Sheets("拆分明细").Rows(i).ClearContents
         wb.Sheets("拆分明细").Cells(i + 1, 1) = m
         i = i + r
@@ -1524,11 +1533,27 @@ Sub FB5(scqdFilename As String)
     wb.Close (True)
 End Sub
 
+Sub testFB6()
+    Dim scqdFilename As String
+    scqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Dim wb As Workbook
+    Set wb = Workbooks.Open(scqdFilename)
+    Call FB6(wb)
+    wb.Close (True)
+End Sub
+
 ' 如果修改明细重新算配件
 Sub FB6(wb As Workbook)
     ' wb.Sheets("拆分明细").Activate
     Application.ScreenUpdating = False
     
+    If isSheetExist(wb, "计算用表") Then
+        wb.Sheets("计算用表").Delete
+    End If
+    wb.Sheets.Add().Name = "计算用表"
+    ThisWorkbook.Sheets("计算用表").Cells.Copy wb.Sheets("计算用表").[A1]
+
+
     ' wb.Sheets("拆分明细").Columns("E:L").Select
     wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
         wb.Sheets("拆分明细").Range("E1:L65535"), Version:=xlPivotTableVersion14).CreatePivotTable _
@@ -1582,15 +1607,15 @@ Sub FB6(wb As Workbook)
     Dim xcjm, dingchi, hangshu, hangshumin
     For i = 2 To endr
         xcjm = wb.Sheets("拆分明细").Range("r" & i) '型材截面
-        If ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
+        If wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
             dingchi = "6000"
         Else
-            hangshu = ThisWorkbook.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
-            dingchi = ThisWorkbook.Sheets("库(待补充)").Range("C" & hangshu)
+            hangshu = wb.Sheets("库(待补充)").Columns(2).Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+            dingchi = wb.Sheets("库(待补充)").Range("C" & hangshu)
         End If
         wb.Sheets("拆分明细").Range("s" & i) = dingchi
         
-        hangshumin = Columns("N:N").Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlPrevious).Row
+        hangshumin = wb.Sheets("拆分明细").Columns("N:N").Find(xcjm, LookAt:=xlWhole, SearchDirection:=xlNext).Row
         wb.Sheets("拆分明细").Range("T" & i) = hangshumin
     Next
     wb.Sheets("拆分明细").Range("s1") = "定尺"
@@ -1686,3 +1711,6 @@ Sub createExcel(fileFullPath As String)
     excelWB.SaveAs fileFullPath
     excelApp.Quit
 End Sub
+
+
+
