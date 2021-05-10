@@ -32,8 +32,8 @@ Function fileIsExist(fileFullPath As String) As Boolean
 End Function
 
 Sub Log(shtName As String, cellName As String, str As String,color As Long)
-    Sheets(shtName).Range(cellName) = str
-    Sheets(shtName).Range(cellName).Interior.Color = color
+    ThisWorkbook.Sheets(shtName).Range(cellName) = str
+    ThisWorkbook.Sheets(shtName).Range(cellName).Interior.Color = color
 End Sub
 
 ' TODO:在打开的时候把临时状态都清了
@@ -56,7 +56,7 @@ Sub chose1()
     Dim dbfqhzFilename As String    ' 打包分区编号汇总文件名
     Dim qdcyFilename As String ' 清单差异文件名
     Dim fpqdDirname As String  ' 分配清单目录名
-
+    Call statusInit()
     Call Log("main", "D2", "请等待..",RGB(240,240,0))
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
     If dg.Show = -1 Then
@@ -146,6 +146,8 @@ Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
 End Sub
 
 Sub HbqdStep2(hbqdFilename As String)
+    Application.ScreenUpdating = False
+
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = True
@@ -199,6 +201,7 @@ Sub HbqdStep2(hbqdFilename As String)
     End With
     wb.Windows(1).Visible = True
     wb.Close (True)
+    Application.ScreenUpdating = True
 End Sub
 
 Sub HbqdStep3Test()
@@ -688,6 +691,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     Dim c1 As Long
     Dim c2 As Long
     Call Log("main", "D10", "正在编制 《打包分区编号汇总》",RGB(240,240,0))
+    Application.ScreenUpdating = False
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -731,11 +735,14 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     dbfqhzWb.Windows(1).Visible = True
     dbfqhzWb.Close (True)
     Set dbfqhzWb = Nothing
-    Call Log("main", "D10", "《打包分区编号汇总》编制完成",RGB(0,240,0))
+    Application.ScreenUpdating = True
+    Call Log("main", "D10", "已完成",RGB(0,240,0))
+    Call Log("main", "D11", "正在 处理《非标不带配件》",RGB(240,240,0))
+    Application.ScreenUpdating = False
     '先对W1,W2做一下调整
     Dim W1_num As Integer
     Dim W2_num As Integer
-    Call Log("main", "D11", "正在 处理《非标不带配件》",RGB(240,240,0))
+    
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -827,9 +834,10 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         Next
     End With
     wb.Sheets("非标不带配件").Columns("J:J").Delete Shift:=xlToLeft
-    Call Log("main", "D11", "《非标带配件》处理完成",RGB(0,240,0))
-
+    Application.ScreenUpdating = True
+    Call Log("main", "D11", "已完成",RGB(0,240,0))
     Call Log("main", "D12", "正在 处理《非标带配件》",RGB(240,240,0))
+    Application.ScreenUpdating = False
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
@@ -987,16 +995,21 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Sheets("非标带配件").Range("R" & end_O - 1 & ": T" & end_O - 1).ClearContents
     ' wb.Sheets("非标带配件").Range("O" & end_O & ":Q" & end_O).Delete Shift:=xlLeft
     wb.Sheets("非标带配件").Range("O:Q").Delete Shift:=xlLeft
-    Call Log("main", "D12", "《非标带配件》处理完成",RGB(0,240,0))
-    Call Log("main", "D10", "已完成",RGB(0,240,0))
     wb.Windows(1).Visible = True
     wb.Close (True)
+    Application.ScreenUpdating = True
+
+    Call Log("main", "D12", "已完成",RGB(0,240,0))
 End Sub
 
 
 
 ' 拆分到工作簿 :
 Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
+    Call Log("main", "D13", "正在将配件 拆分到《分配清单》目录中",RGB(240,240,0))
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = True
@@ -1011,8 +1024,7 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
     If Dir(path, vbDirectory) = "" Then
         MkDir path
     End If
-    Call Log("main", "D13", "正在将配件 拆分到《分配清单》目录中",RGB(240,240,0))
-    Application.DisplayAlerts = False
+    
     For Each ws In wb.Worksheets
         If ws.Name = "非标带配件" Or ws.Name = "非标不带配件" Then
             Set d = CreateObject("scripting.dictionary")
@@ -1057,10 +1069,11 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
             Set t = Nothing
         End If
     Next
-    Call Log("main", "D13", "已完成",RGB(0,240,0))
     Application.DisplayAlerts = True
     wb.Windows(1).Visible = True
     wb.Close (True)
+    Application.ScreenUpdating = True
+    Call Log("main", "D13", "已完成",RGB(0,240,0))
 End Sub
 
 
