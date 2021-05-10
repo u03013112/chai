@@ -25,6 +25,41 @@ Sub init()
     txtscch = "生产厂号"
 End Sub
 
+Function inputCheck() As Boolean
+    ThisWorkbook.Sheets("main").Range("C15:C24").Interior.color = RGB(255, 255, 255)
+
+    Dim arr As Variant
+    arr = Array( _
+        Array("楼P代码", "C15"), _
+        Array("工程名称", "C16"), _
+        Array("区域简写", "C17"), _
+        Array("计划单号", "C18"), _
+        Array("表面处理", "C19"), _
+        Array("下单时间", "C20"), _
+        Array("工艺姓名", "C21"), _
+        Array("工艺电话", "C22"), _
+        Array("审核姓名", "C23"), _
+        Array("生产厂号", "C24") _
+    )
+    Dim i
+    For Each i In arr
+        If ThisWorkbook.Sheets("main").Range(i(1)) = "" Then
+            MsgBox "请填写 " & i(0) & " ，位于表格的 " & i(1) & " 位置"
+            ThisWorkbook.Sheets("main").Range(i(1)).Interior.color = RGB(240, 0, 0)
+            inputCheck = False
+            Exit Function
+        End If
+    Next
+    ThisWorkbook.Sheets("main").Range("C15:C24").Interior.color = RGB(0, 240, 0)
+    inputCheck = True
+    Exit Function
+End Function
+
+Sub chose2()
+    Call inputCheck
+End Sub
+
+
 ' TODO，上一步做完，将fpqdFilename罗列在工作表里，等待处理
 Sub testFB1()
     Dim fpqdFilename As String
@@ -262,27 +297,27 @@ Sub FB2(scqdFilename As String)
                 wb.Sheets("erp").Range("I" & xcki) = xch
                 wb.Sheets("erp").Range("J" & xcki) = dingchi
                 If xch = "请输入型材" Then
-                    wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
-                    wb.Sheets("erp").Range("J" & xcki).Interior.Color = RGB(255, 20, 20)
+                    wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
+                    wb.Sheets("erp").Range("J" & xcki).Interior.color = RGB(255, 20, 20)
                 End If
             End If
         If wb.Sheets("erp").Range("G" & xcki) = "K板" Then
             If Left(wb.Sheets("erp").Range("I" & xcki), 4) <> "YK-P" Or wb.Sheets("erp").Range("I" & xcki) <> "ZWGYC-2370" Then
-                    wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
+                    wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
             End If
         End If
-        If InStr(wb.Sheets("erp").Range("G" & xcki), "堵板") > 0 And wb.Sheets("erp").Range("I" & xcki) <> "ZWGYC-3273" Then wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
+        If InStr(wb.Sheets("erp").Range("G" & xcki), "堵板") > 0 And wb.Sheets("erp").Range("I" & xcki) <> "ZWGYC-3273" Then wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
         '2018-11-02  新增,出现例如300D600 这样的情况,是需要用一代板的,这里增加一个判断提示
         If (wb.Sheets("erp").Range("G" & xcki) = "平板" Or wb.Sheets("erp").Range("G" & xcki) = "平面板" Or wb.Sheets("erp").Range("G" & xcki) = "PK板") Then
             If InStr(Split(wb.Sheets("erp").Range("A" & xcki), "-")(1), "D") > 1 Then
-                wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
+                wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
             End If
         End If
         '1107 增加了5XC 5SC颜色
         If InStr(wb.Sheets("erp").Range("A" & xcki), "XC") + InStr(wb.Sheets("erp").Range("A" & xcki), "SC") > 1 Then
-            wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
+            wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
         End If
-        If InStr(wb.Sheets("erp").Range("G" & xcki), "龙骨") + InStr(wb.Sheets("erp").Range("G" & xcki), "铝梁") > 0 And wb.Sheets("erp").Range("I" & xcki) <> "HLD-31" Then wb.Sheets("erp").Range("I" & xcki).Interior.Color = RGB(255, 20, 20)
+        If InStr(wb.Sheets("erp").Range("G" & xcki), "龙骨") + InStr(wb.Sheets("erp").Range("G" & xcki), "铝梁") > 0 And wb.Sheets("erp").Range("I" & xcki) <> "HLD-31" Then wb.Sheets("erp").Range("I" & xcki).Interior.color = RGB(255, 20, 20)
     Next
     endb = wb.Sheets("erp").[B65536].End(xlUp).Row
     Slhj = Application.WorksheetFunction.Sum(wb.Sheets("erp").Range("b1:b" & endb)) '数量合计
@@ -354,7 +389,7 @@ Sub FB2(scqdFilename As String)
                         wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3265"
                     Else
                         ' Range("I" & XCHI) = "YK-P002"
-                        wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                        wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                     End If
                 End If
                 If wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3266" Then '150P
@@ -362,7 +397,7 @@ Sub FB2(scqdFilename As String)
                         wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3266"
                     Else
                         '  Range("I" & XCHI) = "YK-P003"
-                        wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                        wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                     End If
                 End If
                 If wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3267" Then '200P
@@ -370,7 +405,7 @@ Sub FB2(scqdFilename As String)
                         wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3267"
                     Else
                         '  Range("I" & XCHI) = "YK-P004"
-                        wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                        wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                     End If
                 End If
                 '-----------------------------------------------------------------------------------------------------
@@ -380,17 +415,17 @@ Sub FB2(scqdFilename As String)
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3888"
                         ElseIf (50 <= MM And MM <= 85) Or (110 <= MM And MM <= 140) Or (165 <= MM And MM <= 200) Then '铣槽二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3268"
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 193, 37) '橙色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 193, 37) '橙色
                         Else
                             wb.Sheets("erp").Range("I" & XCHI) = "YK-P005" '铣槽一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     Else
                         If (50 <= MM And MM <= 85) Or (110 <= MM And MM <= 140) Or (165 <= MM And MM <= 200) Then '二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3268"
                         Else
                             '  wb.Sheets("erp").Range("I" & XCHI) = "YK-P005" '一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     End If
                 End If
@@ -401,17 +436,17 @@ Sub FB2(scqdFilename As String)
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3887"
                         ElseIf (50 <= MM And MM <= 110) Or (135 <= MM And MM <= 165) Or (190 <= MM And MM <= 250) Then '铣槽二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3269"
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 193, 37) '橙色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 193, 37) '橙色
                         Else
                             wb.Sheets("erp").Range("I" & XCHI) = "YK-P006" '铣槽一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     Else
                         If (50 <= MM And MM <= 110) Or (135 <= MM And MM <= 165) Or (190 <= MM And MM <= 250) Then '二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3269"
                         Else
                             ' wb.Sheets("erp").Range("I" & XCHI) = "YK-P006" '一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     End If
                 End If
@@ -422,17 +457,17 @@ Sub FB2(scqdFilename As String)
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3886"
                         ElseIf (50 <= MM And MM <= 115) Or (140 <= MM And MM <= 210) Or (235 <= MM And MM <= 300) Then '铣槽二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3270"
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 193, 37) '橙色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 193, 37) '橙色
                         Else
                             wb.Sheets("erp").Range("I" & XCHI) = "YK-P007" '铣槽一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     Else
                         If (50 <= MM And MM <= 115) Or (140 <= MM And MM <= 210) Or (235 <= MM And MM <= 300) Then '二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3270"
                         Else
                             '  wb.Sheets("erp").Range("I" & XCHI) = "YK-P007" '一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     End If
                 End If
@@ -443,17 +478,17 @@ Sub FB2(scqdFilename As String)
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3885"
                         ElseIf (50 <= MM And MM <= 160) Or (185 <= MM And MM <= 215) Or (240 <= MM And MM <= 350) Then '铣槽二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3271"
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 193, 37) '橙色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 193, 37) '橙色
                         Else
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-2370" '铣槽一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     Else
                         If (50 <= MM And MM <= 160) Or (185 <= MM And MM <= 215) Or (240 <= MM And MM <= 350) Then '二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3271"
                     Else
                         '  wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-2370" '一代板
-                        wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                        wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                     End If
                 End If
             End If
@@ -464,23 +499,23 @@ Sub FB2(scqdFilename As String)
                         wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3884"
                         ElseIf (50 <= MM And MM <= 152.5) Or (197.5 <= MM And MM <= 302.5) Or (347.5 <= MM And MM <= 450) Then '铣槽二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3272"
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 193, 37) '橙色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 193, 37) '橙色
                         Else
                             '无一代板
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(255, 0, 0) '红色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(255, 0, 0) '红色
                         End If
                     Else
                         If (50 <= MM And MM <= 152.5) Or (197.5 <= MM And MM <= 302.5) Or (347.5 <= MM And MM <= 450) Then '二代板
                             wb.Sheets("erp").Range("I" & XCHI) = "ZWGYC-3272"
                         Else
-                            wb.Sheets("erp").Range("I" & XCHI).Interior.Color = RGB(127, 255, 212) '青色
+                            wb.Sheets("erp").Range("I" & XCHI).Interior.color = RGB(127, 255, 212) '青色
                         End If
                     End If
                 End If
                 '-----------------------------------------------------------------------------------------------------
                 If InStr(wb.Sheets("erp").Range("H" & XCHI), "XP") > 0 Then
                     wb.Sheets("erp").Range("I" & XCHI) = "ZWMB-07"
-                    wb.Sheets("erp").Range("I" & XCHI).Interior.Color = xlNone '无色
+                    wb.Sheets("erp").Range("I" & XCHI).Interior.color = xlNone '无色
                 End If
             End If
         End If
@@ -753,7 +788,7 @@ Sub FB2(scqdFilename As String)
             End If
         End If
         If Len(wb.Sheets("erp").Range("H" & XCHI)) > 0 And Len(wb.Sheets("erp").Range("G" & XCHI)) = 0 Then
-            wb.Sheets("erp").Range("G" & XCHI).Interior.Color = RGB(255, 0, 0)
+            wb.Sheets("erp").Range("G" & XCHI).Interior.color = RGB(255, 0, 0)
         End If
         If Mid(wb.Sheets("erp").Range("F" & XCHI), 2, 1) = "-" Or Mid(wb.Sheets("erp").Range("F" & XCHI), 3, 1) = "-" And Len("A" & XCHI) > 0 Then
             wb.Sheets("erp").Range("M" & XCHI) = Split(wb.Sheets("erp").Range("F" & XCHI), "-")(0)
@@ -830,7 +865,7 @@ Sub FB3(scqdFilename As String)
         End If
         Remainder = k Mod 26  '余数
         If k > 0 And Remainder = 0 Then
-            wb.Sheets("erp").Range("A" & dys - 1).Interior.Color = RGB(232, 159, 187)
+            wb.Sheets("erp").Range("A" & dys - 1).Interior.color = RGB(232, 159, 187)
         lj = lj + 1 '累计次数
         End If
     Next
@@ -1436,7 +1471,7 @@ Sub FB5(scqdFilename As String)
         If Len(wb.Sheets("erp").Range("C" & i)) > 0 Then
             xck = wb.Sheets("erp").Cells(i, 3) '型材宽度
             If ThisWorkbook.Sheets("库(待补充)").Columns(6).Find(xck, LookAt:=xlWhole, SearchDirection:=xlPrevious) Is Nothing Then
-                wb.Sheets("erp").Range("C" & i).Interior.Color = RGB(230, 100, 100) '
+                wb.Sheets("erp").Range("C" & i).Interior.color = RGB(230, 100, 100) '
                 k = k + 1 '如果K大于零，则需要在库里加新的拆分明细表
             End If
         End If
@@ -1658,7 +1693,7 @@ Sub FB6(wb As Workbook)
     Dim bcsl
     For i = 2 To endr
         If InStr(wb.Sheets("拆分明细").Range("O" & i).Text, "板材") > 0 Then
-            wb.Sheets("拆分明细").Range("O" & i).Interior.Color = RGB(230, 100, 100)
+            wb.Sheets("拆分明细").Range("O" & i).Interior.color = RGB(230, 100, 100)
             bcsl = bcsl + 1
         End If
     Next
