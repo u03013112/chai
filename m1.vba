@@ -107,6 +107,7 @@ Sub chose1()
 End Sub
 
 Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
+    Application.ScreenUpdating = False
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = True
@@ -125,7 +126,7 @@ Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
         
     brr = Array("序号", "模板名称", "数量", "打包表名")
     wb.Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
-
+    Application.ScreenUpdating = True
     Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件",RGB(0,240,0))
     Dim excelFilename As Variant
     Dim count As Long
@@ -135,14 +136,14 @@ Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
             Exit For
         End If
         Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename,RGB(240,240,0))
-        Application.ScreenUpdating = False
         Call SjqdCopy(CStr(excelFilename), wb)
-        Application.ScreenUpdating = True
         count = count + 1
     Next
     Call Log("main", "D6", "已完成",RGB(0,240,0))
+    Application.ScreenUpdating = False
     wb.Windows(1).Visible = True
     wb.Close (True)
+    Application.ScreenUpdating = True
 End Sub
 
 Sub HbqdStep2(hbqdFilename As String)
@@ -236,11 +237,12 @@ Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
     Call Log("main", "D7", "开始检查数据，核对打包清单",RGB(240,240,0))
     Application.DisplayAlerts = False
     
-
+    Application.ScreenUpdating = False
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = True
     ThisWorkbook.Activate
+    Application.ScreenUpdating = True
 
     Call StdOrNoStd(wb)
     Application.ScreenUpdating = False
@@ -348,6 +350,7 @@ End Function
 
 '设计清单复制 ：沿用了旧名字，不明白意义，不改名
 Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
+    Application.ScreenUpdating = False
     Dim wb As Workbook
     Dim irow As Integer
     Dim k As Integer
@@ -473,6 +476,7 @@ Private Sub SjqdCopy(filename As String, wbTarget As Workbook)
         End If
     Next
     wb.Close 0
+    Application.ScreenUpdating = True
 End Sub
 
 ' 分出标准件非标件 ：沿用了旧名字，不明白意义，不改名
@@ -538,6 +542,7 @@ Private Sub StdOrNoStd(wb As Workbook)
                 Quyu = .Range("D" & i).Text
             End If
         Next i
+        
         Call Log("main", "D7", "已完成",RGB(0,240,0))
         Call Log("main", "D9", "已完成",RGB(0,240,0))
     End With
@@ -678,6 +683,9 @@ End Function
 
 ' 打包清单分类 ：沿用了旧名字，不明白意义，不改名
 Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
+    Call Log("main", "D10", "正在编制 《打包分区编号汇总》",RGB(240,240,0))
+    Application.ScreenUpdating = False
+
     Dim wb As Workbook
     Set wb = Workbooks.Open(hbqdFilename)
     wb.Windows(1).Visible = True
@@ -690,8 +698,7 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
 
     Dim c1 As Long
     Dim c2 As Long
-    Call Log("main", "D10", "正在编制 《打包分区编号汇总》",RGB(240,240,0))
-    Application.ScreenUpdating = False
+    
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
     For c1 = 2 To endb
