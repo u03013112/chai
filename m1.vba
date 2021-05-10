@@ -41,6 +41,7 @@ Sub statusInit()
     ThisWorkbook.Sheets("main").Range("D2") = "等待开始"
     ThisWorkbook.Sheets("main").Range("D3:D13").ClearContents
     ThisWorkbook.Sheets("main").Range("D3:D13").Interior.Color = RGB(240, 240, 0)
+    ThisWorkbook.Sheets("main").Rows("3:13").Hidden = False
 End Sub
 
 Sub chose1()
@@ -99,6 +100,7 @@ Sub chose1()
         Call Cfdgzb(hbqdFilename, fpqdDirname)
         
         Call Log("main", "D2", "已完成",RGB(0,240,0))
+        ThisWorkbook.Sheets("main").Rows("3:13").Hidden = True
         Exit Sub
     Else
         Exit Sub
