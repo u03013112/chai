@@ -11,20 +11,6 @@ Dim txtgydh As String ' 工艺电话
 Dim txtshxm As String ' 审核姓名
 Dim txtscch As String ' 生产厂号
 
-' TODO 输入检查
-Sub init()
-    txtlpdm = "楼P代码"
-    txtgcmc = "工程名称"
-    txtqyjx = "区域简写"
-    txtjhdh = "计划单号"
-    txtbmcl = "表面处理"
-    txtxdsj = "下单时间"
-    txtgyxm = "工艺姓名"
-    txtgydh = "工艺电话"
-    txtshxm = "审核姓名"
-    txtscch = "生产厂号"
-End Sub
-
 Function inputCheck() As Boolean
     ThisWorkbook.Sheets("main").Range("C15:C24").Interior.color = RGB(255, 255, 255)
 
@@ -61,15 +47,32 @@ Sub chose2()
     ret = inputCheck()
     If ret = True Then
         ThisWorkbook.Sheets("main").Rows("15:24").Hidden = Not ThisWorkbook.Sheets("main").Rows("15:24").Hidden
+        Call init
         Call Log("main", "D14:D24", "已完成", RGB(0, 240, 0))
     End If
 End Sub
 
+Sub init()
+    txtlpdm = ThisWorkbook.Sheets("main").Range("C15").Value
+    txtgcmc = ThisWorkbook.Sheets("main").Range("C16").Value
+    txtqyjx = ThisWorkbook.Sheets("main").Range("C17").Value
+    txtjhdh = ThisWorkbook.Sheets("main").Range("C18").Value
+    txtbmcl = ThisWorkbook.Sheets("main").Range("C19").Value
+    txtxdsj = ThisWorkbook.Sheets("main").Range("C20").Value
+    txtgyxm = ThisWorkbook.Sheets("main").Range("C21").Value
+    txtgydh = ThisWorkbook.Sheets("main").Range("C22").Value
+    txtshxm = ThisWorkbook.Sheets("main").Range("C23").Value
+    txtscch = ThisWorkbook.Sheets("main").Range("C24").Value
+End Sub
 
 ' TODO，上一步做完，将fpqdFilename罗列在工作表里，等待处理
 Sub testFB1()
     Dim fpqdFilename As String
     Dim scqdFilename As String
+    Dim fileFolderName
+    fileFolderName = Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")(UBound(Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")))
+    outputDir = ThisWorkbook.path & "\" & fileFolderName
+    hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
     fpqdFilename = "C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx"
     ' fpqdFilename = "C:\Users\u03013112\Documents\002\C-494.xlsx"
     
