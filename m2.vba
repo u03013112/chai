@@ -26,7 +26,6 @@ Sub init()
 End Sub
 
 Function inputCheck() As Boolean
-    ThisWorkbook.Sheets("main").Rows("15:24").Hidden = False
     ThisWorkbook.Sheets("main").Range("C15:C24").Interior.color = RGB(255, 255, 255)
 
     Dim arr As Variant
@@ -47,6 +46,7 @@ Function inputCheck() As Boolean
         If ThisWorkbook.Sheets("main").Range(i(1)) = "" Then
             MsgBox "请填写 " & i(0) & " ，位于表格的 " & i(1) & " 位置"
             ThisWorkbook.Sheets("main").Range(i(1)).Interior.color = RGB(240, 0, 0)
+            ThisWorkbook.Sheets("main").Rows("15:24").Hidden = False
             inputCheck = False
             Exit Function
         End If
@@ -58,10 +58,10 @@ End Function
 
 Sub chose2()
     Dim ret
-    ret = Call inputCheck
+    ret = inputCheck()
     If ret = True Then
-        ThisWorkbook.Sheets("main").Rows("15:24").Hidden = True
-        Call Log("main", "D14:D24", "已完成",RGB(0,240,0))
+        ThisWorkbook.Sheets("main").Rows("15:24").Hidden = Not ThisWorkbook.Sheets("main").Rows("15:24").Hidden
+        Call Log("main", "D14:D24", "已完成", RGB(0, 240, 0))
     End If
 End Sub
 
@@ -1753,7 +1753,7 @@ Sub createExcel(fileFullPath As String)
     excelApp.Quit
 End Sub
 
-Sub Log(shtName As String, cellName As String, str As String,color As Long)
+Sub Log(shtName As String, cellName As String, str As String, color As Long)
     ThisWorkbook.Sheets(shtName).Range(cellName) = str
-    ThisWorkbook.Sheets(shtName).Range(cellName).Interior.Color = color
+    ThisWorkbook.Sheets(shtName).Range(cellName).Interior.color = color
 End Sub
