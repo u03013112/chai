@@ -31,16 +31,16 @@ Function fileIsExist(fileFullPath As String) As Boolean
   fileIsExist = ret
 End Function
 
-Sub Log(shtName As String, cellName As String, str As String,color As Long)
+Sub Log(shtName As String, cellName As String, str As String, color As Long)
     ThisWorkbook.Sheets(shtName).Range(cellName) = str
-    ThisWorkbook.Sheets(shtName).Range(cellName).Interior.Color = color
+    ThisWorkbook.Sheets(shtName).Range(cellName).Interior.color = color
 End Sub
 
 ' TODO:在打开的时候把临时状态都清了
 Sub statusInit()
     ThisWorkbook.Sheets("main").Range("D2") = "等待开始"
     ThisWorkbook.Sheets("main").Range("D3:D13").ClearContents
-    ThisWorkbook.Sheets("main").Range("D3:D13").Interior.Color = RGB(240, 240, 0)
+    ThisWorkbook.Sheets("main").Range("D3:D13").Interior.color = RGB(240, 240, 0)
     ThisWorkbook.Sheets("main").Rows("3:13").Hidden = False
 End Sub
 
@@ -57,8 +57,8 @@ Sub chose1()
     Dim dbfqhzFilename As String    ' 打包分区编号汇总文件名
     Dim qdcyFilename As String ' 清单差异文件名
     Dim fpqdDirname As String  ' 分配清单目录名
-    Call statusInit()
-    Call Log("main", "D2", "请等待..",RGB(240,240,0))
+    Call statusInit
+    Call Log("main", "D2", "请等待..", RGB(240, 240, 0))
     Set dg = Application.FileDialog(msoFileDialogFolderPicker)
     If dg.Show = -1 Then
         '递归所选目录，找到所有excel文件
@@ -68,7 +68,7 @@ Sub chose1()
         'TODO 检测找到的文件是否合格
 
         '在本地进行临时处理
-        Call Log("main", "D3", "已选择目录:" & dg.SelectedItems(1),RGB(0,240,0))
+        Call Log("main", "D3", "已选择目录:" & dg.SelectedItems(1), RGB(0, 240, 0))
         fileFolderName = Split(dg.SelectedItems(1), "\")(UBound(Split(dg.SelectedItems(1), "\")))
         outputDir = ThisWorkbook.path & "\" & fileFolderName
         hbqdFilename = outputDir & "\" & fileFolderName & "-合并清单.xlsx"
@@ -77,13 +77,13 @@ Sub chose1()
         fpqdDirname = outputDir & "\分配清单\"
         If dirIsExist(outputDir) = True Then
             Dim result
-            Call Log("main", "D4", "存有旧状态，或已完成文件，需要清理才能继续",RGB(240,240,0))
+            Call Log("main", "D4", "存有旧状态，或已完成文件，需要清理才能继续", RGB(240, 240, 0))
             result = MsgBox("检测到有同名项目已存在，是否删除重做？", 4, "选择否将中断拆图")
             If result = vbNo Then Exit Sub
             
             CreateObject("scripting.filesystemobject").GetFolder(outputDir).Delete True
             ' delDIr (outputDir)
-            Call Log("main", "D4", "清理完成",RGB(0,240,0))
+            Call Log("main", "D4", "清理完成", RGB(0, 240, 0))
         End If
         
         VBA.MkDir (outputDir)
@@ -99,7 +99,7 @@ Sub chose1()
         Call Dbqdfl(hbqdFilename, dbfqhzFilename)
         Call Cfdgzb(hbqdFilename, fpqdDirname)
         
-        Call Log("main", "D2", "已完成",RGB(0,240,0))
+        Call Log("main", "D2", "已完成", RGB(0, 240, 0))
         ThisWorkbook.Sheets("main").Rows("3:13").Hidden = True
         Exit Sub
     Else
@@ -129,7 +129,7 @@ Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
     brr = Array("序号", "模板名称", "数量", "打包表名")
     wb.Sheets("设计打包清单").[A1].Resize(1, UBound(brr) + 1) = brr
     Application.ScreenUpdating = True
-    Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件",RGB(0,240,0))
+    Call Log("main", "D5", "共检测到" & getArrLen(excelFilenames) & "个excel文件", RGB(0, 240, 0))
     Dim excelFilename As Variant
     Dim count As Long
     count = 1
@@ -137,11 +137,11 @@ Sub HbqdStep1(hbqdFilename As String, excelFilenames As Variant)
         If excelFilename = Empty Then
             Exit For
         End If
-        Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename,RGB(240,240,0))
+        Call Log("main", "D6", "正在处理第" & count & "个文件：" & excelFilename, RGB(240, 240, 0))
         Call SjqdCopy(CStr(excelFilename), wb)
         count = count + 1
     Next
-    Call Log("main", "D6", "已完成",RGB(0,240,0))
+    Call Log("main", "D6", "已完成", RGB(0, 240, 0))
     Application.ScreenUpdating = False
     wb.Windows(1).Visible = True
     wb.Close (True)
@@ -236,7 +236,7 @@ End Sub
 
 ' TODO: 完全不再使用透视表，使用Dict替代透视表
 Sub HbqdStep3(hbqdFilename As String, qdcyFilename As String)
-    Call Log("main", "D7", "开始检查数据，核对打包清单",RGB(240,240,0))
+    Call Log("main", "D7", "开始检查数据，核对打包清单", RGB(240, 240, 0))
     Application.DisplayAlerts = False
     
     Application.ScreenUpdating = False
@@ -512,9 +512,9 @@ Private Sub StdOrNoStd(wb As Workbook)
         .[A1].Resize(1, UBound(brr) + 1) = brr
         enda = .Cells(65535, 1).End(xlUp).Row
         Quyu = ""
-        Call Log("main", "D8", "共发现零件:" & enda - 1 & "种",RGB(0,240,0))
+        Call Log("main", "D8", "共发现零件:" & enda - 1 & "种", RGB(0, 240, 0))
         For i = 2 To enda
-            Call Log("main", "D9", "已完成:" & i - 1,RGB(240,240,0))
+            Call Log("main", "D9", "已完成:" & i - 1, RGB(240, 240, 0))
             
             mbmc = .Range("B" & i)
             '在标准件清单中找设计打包清单中的模板名称,如果找到就标注是标准件,没找到看打包名称和上面的是否一样,一样的话就是编号+1,不一样的话就自己开头
@@ -545,8 +545,8 @@ Private Sub StdOrNoStd(wb As Workbook)
             End If
         Next i
         
-        Call Log("main", "D7", "已完成",RGB(0,240,0))
-        Call Log("main", "D9", "已完成",RGB(0,240,0))
+        Call Log("main", "D7", "已完成", RGB(0, 240, 0))
+        Call Log("main", "D9", "已完成", RGB(0, 240, 0))
     End With
 End Sub
 
@@ -685,7 +685,7 @@ End Function
 
 ' 打包清单分类 ：沿用了旧名字，不明白意义，不改名
 Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
-    Call Log("main", "D10", "正在编制 《打包分区编号汇总》",RGB(240,240,0))
+    Call Log("main", "D10", "正在编制 《打包分区编号汇总》", RGB(240, 240, 0))
     Application.ScreenUpdating = False
 
     Dim wb As Workbook
@@ -745,8 +745,8 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     dbfqhzWb.Close (True)
     Set dbfqhzWb = Nothing
     Application.ScreenUpdating = True
-    Call Log("main", "D10", "已完成",RGB(0,240,0))
-    Call Log("main", "D11", "正在 处理《非标不带配件》",RGB(240,240,0))
+    Call Log("main", "D10", "已完成", RGB(0, 240, 0))
+    Call Log("main", "D11", "正在 处理《非标不带配件》", RGB(240, 240, 0))
     Application.ScreenUpdating = False
     '先对W1,W2做一下调整
     Dim W1_num As Integer
@@ -828,24 +828,24 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         For i = 2 To endb
             If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
             If k Mod 6 = 1 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(248, 230, 158)
             ElseIf k Mod 6 = 2 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(232, 159, 187)
             ElseIf k Mod 6 = 3 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(6, 103, 163)
             ElseIf k Mod 6 = 4 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(28, 140, 185)
             ElseIf k Mod 6 = 5 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(126, 202, 221)
             ElseIf k Mod 6 = 0 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(221, 236, 242)
             End If
         Next
     End With
     wb.Sheets("非标不带配件").Columns("J:J").Delete Shift:=xlToLeft
     Application.ScreenUpdating = True
-    Call Log("main", "D11", "已完成",RGB(0,240,0))
-    Call Log("main", "D12", "正在 处理《非标带配件》",RGB(240,240,0))
+    Call Log("main", "D11", "已完成", RGB(0, 240, 0))
+    Call Log("main", "D12", "正在 处理《非标带配件》", RGB(240, 240, 0))
     Application.ScreenUpdating = False
     endb = wb.Sheets("设计打包清单").Cells(65535, 1).End(xlUp).Row
     c2 = 2
@@ -921,17 +921,17 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
         For i = 2 To endb
             If .Range("B" & i) <> .Range("B" & i - 1) Then k = k + 1
             If k Mod 6 = 1 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(248, 230, 158)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(248, 230, 158)
             ElseIf k Mod 6 = 2 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(232, 159, 187)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(232, 159, 187)
             ElseIf k Mod 6 = 3 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(6, 103, 163)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(6, 103, 163)
             ElseIf k Mod 6 = 4 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(28, 140, 185)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(28, 140, 185)
             ElseIf k Mod 6 = 5 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(126, 202, 221)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(126, 202, 221)
             ElseIf k Mod 6 = 0 Then
-                    .Range("A" & i & ":K" & i).Interior.Color = RGB(221, 236, 242)
+                    .Range("A" & i & ":K" & i).Interior.color = RGB(221, 236, 242)
             End If
             .Range("J" & i) = "TP"
         Next
@@ -1008,14 +1008,14 @@ Private Sub Dbqdfl(hbqdFilename As String, dbfqhzFilename As String)
     wb.Close (True)
     Application.ScreenUpdating = True
 
-    Call Log("main", "D12", "已完成",RGB(0,240,0))
+    Call Log("main", "D12", "已完成", RGB(0, 240, 0))
 End Sub
 
 
 
 ' 拆分到工作簿 :
 Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
-    Call Log("main", "D13", "正在将配件 拆分到《分配清单》目录中",RGB(240,240,0))
+    Call Log("main", "D13", "正在将配件 拆分到《分配清单》目录中", RGB(240, 240, 0))
     Application.DisplayAlerts = False
     Application.ScreenUpdating = False
 
@@ -1034,6 +1034,8 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
         MkDir path
     End If
     
+    Dim count As Long
+    count = 0
     For Each ws In wb.Worksheets
         If ws.Name = "非标带配件" Or ws.Name = "非标不带配件" Then
             Set d = CreateObject("scripting.dictionary")
@@ -1065,9 +1067,13 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
                         .Borders.LineStyle = xlContinuous
                         .EntireColumn.AutoFit
                     End With
-                    .SaveAs filename:=path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    Dim filename As String
+                    filename = path & Replace(k(i), Chr(9), "") & "-" & heji & ".xlsx"
+                    .SaveAs filename
                     .Close
                     heji = 0
+                    ThisWorkbook.Sheets("main").Range("C" & 26 + count) = filename
+                    count = count + 1
                 End With
             Next
             Set d = Nothing
@@ -1082,8 +1088,10 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
     wb.Windows(1).Visible = True
     wb.Close (True)
     Application.ScreenUpdating = True
-    Call Log("main", "D13", "已完成",RGB(0,240,0))
+    Call Log("main", "D13", "已完成", RGB(0, 240, 0))
 End Sub
+
+
 
 
 
