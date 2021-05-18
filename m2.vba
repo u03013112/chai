@@ -191,7 +191,7 @@ Sub FB1(fpqdFilename As String, scqdFilename As String)
         Application.ScreenUpdating = True
         wb.Windows(1).Visible = True
         wb.Close (True)
-        MsgBox "总数量： " & Slhj & " 件"
+        ' MsgBox "总数量： " & Slhj & " 件"
     End If
 End Sub
 ' 合并同类模板并分类
@@ -1780,6 +1780,7 @@ Sub FBA()
     outputDir = ThisWorkbook.path & "\" & fileFolderName
     
     fpqdFilename = r.Offset(-1, 2)
+    Call init
     scqdFilename = outputDir & "\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
     Call FB1(fpqdFilename, scqdFilename)
     Application.ScreenUpdating = True
@@ -1787,7 +1788,22 @@ Sub FBA()
 End Sub
 
 Sub FBB()
-    MsgBox ("FBB")
+    Dim r As Range
+    Set r = ThisWorkbook.Sheets("main").Buttons(Application.Caller).TopLeftCell
+    Call LogRange(r.Offset(0, 3), "请等待..", RGB(240, 240, 0))
+    Application.ScreenUpdating = False
+
+    Dim fileFolderName
+    Dim outputDir
+    fileFolderName = Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")(UBound(Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")))
+    outputDir = ThisWorkbook.path & "\" & fileFolderName
+    Dim scqdFilename As String
+    Call init
+    scqdFilename = outputDir & "\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Call FB2(scqdFilename)
+
+    Application.ScreenUpdating = True
+    Call LogRange(r.Offset(0, 3), "已完成", RGB(0, 240, 0))
 End Sub
 
 Sub FBC()
