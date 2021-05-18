@@ -11,6 +11,8 @@ Dim txtgydh As String ' 工艺电话
 Dim txtshxm As String ' 审核姓名
 Dim txtscch As String ' 生产厂号
 
+' TODO ： 要添加流程控制，确保用户操作正确
+
 Function inputCheck() As Boolean
     ThisWorkbook.Sheets("main").Range("C15:C24").Interior.color = RGB(255, 255, 255)
 
@@ -1804,6 +1806,7 @@ Sub FBB()
 
     Application.ScreenUpdating = True
     Call LogRange(r.Offset(0, 3), "已完成", RGB(0, 240, 0))
+    ' TODO ： 爆红的部分要添加处理
 End Sub
 
 Sub FBC()
