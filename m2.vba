@@ -1760,3 +1760,45 @@ Sub Log(shtName As String, cellName As String, str As String, color As Long)
     ThisWorkbook.Sheets(shtName).Range(cellName) = str
     ThisWorkbook.Sheets(shtName).Range(cellName).Interior.color = color
 End Sub
+
+' 直接在给定range里Log
+Sub LogRange(r As Range, str As String, color As Long)
+    r = str
+    r.Interior.color = color
+End Sub
+
+Sub FBA()
+    Dim r As Range
+    Set r = ThisWorkbook.Sheets("main").Buttons(Application.Caller).TopLeftCell
+    Call LogRange(r.Offset(0, 3), "请等待..", RGB(240, 240, 0))
+    Application.ScreenUpdating = False
+    Dim fpqdFilename As String
+    Dim scqdFilename As String
+    Dim fileFolderName
+    Dim outputDir
+    fileFolderName = Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")(UBound(Split(ThisWorkbook.Sheets("main").Range("D3").Value, "\")))
+    outputDir = ThisWorkbook.path & "\" & fileFolderName
+    
+    fpqdFilename = r.Offset(-1, 2)
+    scqdFilename = outputDir & "\分配清单\" & txtlpdm & txtgcmc & txtqyjx & "-生产单.xlsx"
+    Call FB1(fpqdFilename, scqdFilename)
+    Application.ScreenUpdating = True
+    Call LogRange(r.Offset(0, 3), "已完成", RGB(0, 240, 0))
+End Sub
+
+Sub FBB()
+    MsgBox ("FBB")
+End Sub
+
+Sub FBC()
+    MsgBox ("FBC")
+End Sub
+
+Sub FBD()
+    MsgBox ("FBD")
+End Sub
+
+Sub FBF()
+    MsgBox ("FBF")
+End Sub
+

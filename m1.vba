@@ -1091,6 +1091,10 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
     Call Log("main", "D13", "已完成", RGB(0, 240, 0))
 End Sub
 
+Sub testMakeFB()
+    Call makeFB("C:\Users\u03013112\Documents\J\new-412-1\分配清单\C-494.xlsx")
+End Sub
+
 ' 制作FB一系列，其中包括记下文件名，制作按钮，和初始化
 Sub makeFB(filename As String)
     ' TODO：清除旧有部分
