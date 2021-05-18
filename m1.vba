@@ -1091,7 +1091,52 @@ Private Sub Cfdgzb(hbqdFilename As String, fpqdDirname As String)
     Call Log("main", "D13", "已完成", RGB(0, 240, 0))
 End Sub
 
+' 制作FB一系列，其中包括记下文件名，制作按钮，和初始化
+Sub makeFB(filename As String)
+    ' TODO：清除旧有部分
+    ' 直接在最后添加
+    Dim lastRowNum As Long
+    lastRowNum = ThisWorkbook.Sheets("main").Cells(65535, 2).End(xlUp).Row
 
+    Dim t
+    With ThisWorkbook.Sheets("main")
+        .Range("C" & lastRowNum) = filename
+        lastRowNum = lastRowNum + 1
 
+        .Range("C" & lastRowNum) = "说实话，这步没搞明白"
+        Set t = .Range("A" & lastRowNum)
+        Set btn = ActiveSheet.Buttons.Add(t.Left, t.Top, t.Width, t.Height)
+        btn.OnAction = "FBA"
+        btn.Caption = "FBA"
+        lastRowNum = lastRowNum + 1
 
+        .Range("C" & lastRowNum) = "说实话，这步没搞明白"
+        Set t = .Range("A" & lastRowNum)
+        Set btn = ActiveSheet.Buttons.Add(t.Left, t.Top, t.Width, t.Height)
+        btn.OnAction = "FBB"
+        btn.Caption = "FBB"
+        lastRowNum = lastRowNum + 1
+
+        .Range("C" & lastRowNum) = "说实话，这步没搞明白"
+        Set t = .Range("A" & lastRowNum)
+        Set btn = ActiveSheet.Buttons.Add(t.Left, t.Top, t.Width, t.Height)
+        btn.OnAction = "FBC"
+        btn.Caption = "FBC"
+        lastRowNum = lastRowNum + 1
+
+        .Range("C" & lastRowNum) = "说实话，这步没搞明白"
+        Set t = .Range("A" & lastRowNum)
+        Set btn = ActiveSheet.Buttons.Add(t.Left, t.Top, t.Width, t.Height)
+        btn.OnAction = "FBD"
+        btn.Caption = "FBD"
+        lastRowNum = lastRowNum + 1
+
+        .Range("C" & lastRowNum) = "说实话，这步没搞明白"
+        Set t = .Range("A" & lastRowNum)
+        Set btn = ActiveSheet.Buttons.Add(t.Left, t.Top, t.Width, t.Height)
+        btn.OnAction = "FBF"
+        btn.Caption = "FBF"
+        lastRowNum = lastRowNum + 1
+    End With
+End Sub
 
